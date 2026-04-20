@@ -1,0 +1,253 @@
+/* 导入字体 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap');
+
+/* 字体优化 */
+body {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 字体变量 */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Roboto', Georgia, serif;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局变量 */
+:root {
+  --primary-color: #1a365d;
+  --secondary-color: #4fd1c5;
+  --accent-color: #ed8936;
+  --background-color: #f8fafc;
+  --text-color: #2d3748;
+  --text-light: #718096;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --success-color: #38a169;
+  --error-color: #e53e3e;
+  --warning-color: #dd6b20;
+}
+
+/* 深色模式变量 */
+.dark {
+  --primary-color: #2a4365;
+  --secondary-color: #48bb78;
+  --accent-color: #ed8936;
+  --background-color: #1a202c;
+  --text-color: #f7fafc;
+  --text-light: #a0aec0;
+  --card-bg: #2d3748;
+  --border-color: #4a5568;
+}
+
+/* 全局样式 */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+/* 字体大小优化 */
+h1 {
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  font-weight: 800;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 700;
+}
+
+h3 {
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  font-weight: 600;
+}
+
+h4 {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  font-weight: 600;
+}
+
+p {
+  margin-bottom: 1em;
+}
+
+/* 响应式字体大小 */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* 自定义动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* 自定义工具类 */
+.fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.slide-in {
+  animation: slideIn 0.4s ease forwards;
+}
+
+/* 波浪背景动画 */
+.wave-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #2c5282 100%);
+  z-index: -1;
+}
+
+.wave-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f8fafc' fill-opacity='1' d='M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,218.7C672,235,768,245,864,234.7C960,224,1056,192,1152,170.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+  background-size: cover;
+  z-index: -1;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 按钮样式 */
+.btn-primary {
+  @apply bg-accent text-white font-medium py-2 px-6 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white font-medium py-2 px-6 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-outline {
+  @apply border border-primary text-primary font-medium py-2 px-6 rounded-lg hover:bg-primary hover:text-white transition-all duration-300;
+}
+
+/* 进度条样式 */
+.progress-bar {
+  @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full bg-secondary transition-all duration-500 ease-out;
+}
+
+/* 徽章样式 */
+.badge-common {
+  @apply bg-gray-200 text-gray-800;
+}
+
+.badge-uncommon {
+  @apply bg-green-200 text-green-800;
+}
+
+.badge-rare {
+  @apply bg-blue-200 text-blue-800;
+}
+
+.badge-epic {
+  @apply bg-purple-200 text-purple-800;
+}
+
+.badge-legendary {
+  @apply bg-yellow-200 text-yellow-800;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .wave-bg::after {
+    height: 80px;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
+
