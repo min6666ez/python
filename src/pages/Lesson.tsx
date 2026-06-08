@@ -4,12 +4,9 @@ import { courses } from '../lib/courses';
 
 // 模拟Pyodide加载
 const loadPyodide = async () => {
-  // 实际项目中，这里会加载真实的Pyodide
-  // 为了演示，我们返回一个模拟对象
   return {
     runPython: async (code: string) => {
       try {
-        // 简单的代码执行模拟
         if (code.includes('print')) {
           const match = code.match(/print\((.*)\)/);
           if (match) {
@@ -31,27 +28,43 @@ export default function Lesson() {
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  const [prevLessonId, setPrevLessonId] = useState<string | null>(null);
+  const [nextLessonId, setNextLessonId] = useState<string | null>(null);
   const pyodideRef = useRef<any>(null);
 
   useEffect(() => {
-    // 查找课程和课时
     const foundCourse = courses.find(c => c.id === courseId);
     if (foundCourse) {
       setCourse(foundCourse);
-      // 查找课时
+      
+      const allLessons: any[] = [];
       for (const module of foundCourse.modules) {
-        const foundLesson = module.lessons.find((l: any) => l.id === lessonId);
-        if (foundLesson) {
-          setLesson(foundLesson);
-          if (foundLesson.codeExample) {
-            setCode(foundLesson.codeExample);
-          }
-          break;
+        allLessons.push(...module.lessons);
+      }
+      
+      const currentIndex = allLessons.findIndex(l => l.id === lessonId);
+      
+      if (currentIndex > 0) {
+        setPrevLessonId(allLessons[currentIndex - 1].id);
+      } else {
+        setPrevLessonId(null);
+      }
+      
+      if (currentIndex < allLessons.length - 1) {
+        setNextLessonId(allLessons[currentIndex + 1].id);
+      } else {
+        setNextLessonId(null);
+      }
+      
+      const foundLesson = allLessons[currentIndex];
+      if (foundLesson) {
+        setLesson(foundLesson);
+        if (foundLesson.codeExample) {
+          setCode(foundLesson.codeExample);
         }
       }
     }
 
-    // 加载Pyodide
     const initPyodide = async () => {
       pyodideRef.current = await loadPyodide();
     };
@@ -183,12 +196,36 @@ export default function Lesson() {
 
         {/* 导航按钮 */}
         <div className="flex justify-between">
-          <button className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
-            上一课
-          </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-            下一课
-          </button>
+          {prevLessonId ? (
+            <Link
+              to={`/course/${courseId}/lesson/${prevLessonId}`}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              上一课
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-gray-400 cursor-not-allowed"
+            >
+              上一课
+            </button>
+          )}
+          {nextLessonId ? (
+            <Link
+              to={`/course/${courseId}/lesson/${nextLessonId}`}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              下一课
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-gray-400 cursor-not-allowed"
+            >
+              下一课
+            </button>
+          )}
         </div>
       </div>
 
