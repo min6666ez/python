@@ -51,6 +51,12 @@ export const DataAnalysisProject: React.FC = () => {
     }
   }, [runPython, project]);
 
+  // 处理重置
+  const handleReset = useCallback(() => {
+    setExecutionResult(null);
+    setShowSolution(false);
+  }, []);
+
   if (!project) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -259,6 +265,7 @@ export const DataAnalysisProject: React.FC = () => {
               <PythonEditor
                 initialCode={showSolution ? project.solutionCode : project.starterCode}
                 onRun={handleRunCode}
+                onReset={handleReset}
               />
             </div>
           </div>

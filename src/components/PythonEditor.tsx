@@ -3,10 +3,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 interface PythonEditorProps {
   initialCode: string;
   onRun: (code: string) => void;
+  onReset?: () => void;
   isExecuting?: boolean;
 }
 
-export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun, isExecuting = false }) => {
+export const PythonEditor: React.FC<PythonEditorProps> = ({ 
+  initialCode, 
+  onRun, 
+  onReset,
+  isExecuting = false 
+}) => {
   const [code, setCode] = useState(initialCode);
 
   useEffect(() => {
@@ -19,7 +25,10 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun, 
 
   const handleReset = useCallback(() => {
     setCode(initialCode);
-  }, [initialCode]);
+    if (onReset) {
+      onReset();
+    }
+  }, [initialCode, onReset]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code);
