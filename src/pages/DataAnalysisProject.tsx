@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataAnalysisProjects } from '../lib/dataAnalysisProjects';
 import { PythonEditor } from '../components/PythonEditor';
@@ -15,6 +15,13 @@ export const DataAnalysisProject: React.FC = () => {
 
   const project = dataAnalysisProjects.find(p => p.id === projectId);
   const { completeTask, isTaskCompleted, getCompletedTasksCount } = useProjectProgress(projectId || '');
+
+  // 当项目变化时重置状态
+  useEffect(() => {
+    setExecutionResult(null);
+    setShowSolution(false);
+    setIsGeneratingDataset(false);
+  }, [projectId]);
 
   // 处理代码运行：合并数据集生成代码和用户代码一起执行
   const handleRunCode = useCallback(async (userCode: string) => {
