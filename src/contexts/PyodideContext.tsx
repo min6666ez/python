@@ -88,7 +88,13 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
       setLoadProgress(50);
 
-      await pyodideInstance.loadPackage(['pandas', 'matplotlib', 'scikit-learn']);
+      await pyodideInstance.loadPackage(['pandas', 'matplotlib', 'scikit-learn', 'micropip']);
+      setLoadProgress(60);
+      
+      await pyodideInstance.runPythonAsync(`
+        import micropip
+        await micropip.install('mlxtend')
+      `);
       setLoadProgress(75);
 
       await pyodideInstance.runPythonAsync(`
