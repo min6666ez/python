@@ -3,19 +3,28 @@ import { useParams, Link } from 'react-router-dom';
 import { dataAnalysisProjects } from '../lib/dataAnalysisProjects';
 import { PythonEditor } from '../components/PythonEditor';
 import { AnalysisResult } from '../components/AnalysisResult';
+import { useProjectProgress } from '../hooks/useProjectProgress';
 
 export const DataAnalysisProject: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [executionResult, setExecutionResult] = useState<any>(null);
+  const [showSolution, setShowSolution] = useState(false);
 
   const project = dataAnalysisProjects.find(p => p.id === projectId);
+  const { completeTask, isTaskCompleted, getCompletedTasksCount } = useProjectProgress(projectId || '');
 
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">项目未找到</h1>
-          <Link to="/data-analysis" className="text-blue-600 hover:underline">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h1 className="text-2xl font-bold mb-4 text-gray-800">项目未找到</h1>
+          <Link to="/data-analysis" className="inline-flex items-center gap-2 text-primary hover:text-primary-light font-medium">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
             返回项目列表
           </Link>
         </div>
@@ -28,23 +37,58 @@ export const DataAnalysisProject: React.FC = () => {
   const prevProject = currentIndex > 0 ? sortedProjects[currentIndex - 1] : null;
   const nextProject = currentIndex < sortedProjects.length - 1 ? sortedProjects[currentIndex + 1] : null;
 
+  const totalTasks = project.tasks?.length || 0;
+  const completedTasks = getCompletedTasksCount();
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // 获取难度对应的颜色
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return 'bg-green-100 text-green-800';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
+      case 'advanced': return 'bg-orange-100 text-orange-800';
+      case 'expert': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDifficultyLabel = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return '入门';
+      case 'intermediate': return '进阶';
+      case 'advanced': return '高级';
+      case 'expert': return '专家';
+      default: return difficulty;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部导航栏 */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/data-analysis" className="text-blue-600 hover:underline flex items-center gap-2">
-              ← 返回项目列表
+            <Link to="/data-analysis" className="text-gray-600 hover:text-gray-800 flex items-center gap-2 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              返回项目列表
             </Link>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               {prevProject && (
-                <Link to={`/data-analysis/${prevProject.id}`} className="text-gray-600 hover:text-gray-800">
-                  ← 上一个
+                <Link to={`/data-analysis/${prevProject.id}`} className="flex items-center gap-1 text-gray-600 hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+                  </svg>
+                  上一个
                 </Link>
               )}
               {nextProject && (
-                <Link to={`/data-analysis/${nextProject.id}`} className="text-gray-600 hover:text-gray-800">
-                  下一个 →
+                <Link to={`/data-analysis/${nextProject.id}`} className="flex items-center gap-1 text-gray-600 hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                  下一个
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                  </svg>
                 </Link>
               )}
             </div>
@@ -53,26 +97,60 @@ export const DataAnalysisProject: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* 项目头部信息 */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl font-bold text-gray-300">#{project.order}</span>
-                <h1 className="text-2xl font-bold text-gray-800">{project.title}</h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-3">
+                <span className="text-3xl font-bold text-gray-200">#{project.order}</span>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">{project.title}</h1>
+                  <p className="text-gray-600 mt-1">{project.shortDescription}</p>
+                </div>
               </div>
-              <p className="text-gray-600">{project.shortDescription}</p>
-            </div>
-            <div className="text-right">
-              <span className="text-sm text-gray-500">预计时间:</span>
-              <div className="font-medium">{project.estimatedTime} 分钟</div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(project.difficulty)}`}>
+                  {getDifficultyLabel(project.difficulty)}
+                </span>
+                <span className="text-gray-500 text-sm flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  {project.estimatedTime} 分钟
+                </span>
+                {totalTasks > 0 && (
+                  <span className="text-gray-500 text-sm flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    {completedTasks}/{totalTasks} 任务
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* 进度条 */}
+          {totalTasks > 0 && (
+            <div className="mb-4">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>学习进度</span>
+                <span>{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-6">
             {project.tags.map((tag) => (
               <span
                 key={tag.id}
-                className={`px-3 py-1 rounded-full text-xs ${tag.color} text-white`}
+                className={`px-3 py-1 rounded-full text-sm ${tag.color} text-white`}
               >
                 {tag.name}
               </span>
@@ -80,61 +158,142 @@ export const DataAnalysisProject: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2">学习目标</h3>
-              <ul className="list-disc list-inside text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                学习目标
+              </h3>
+              <ul className="space-y-2">
                 {project.learningObjectives.map((obj, idx) => (
-                  <li key={idx}>{obj}</li>
+                  <li key={idx} className="flex items-start gap-2 text-gray-600">
+                    <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {obj}
+                  </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="font-semibold mb-2">前置知识</h3>
-              <ul className="list-disc list-inside text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                前置知识
+              </h3>
+              <ul className="space-y-2">
                 {project.prerequisites.map((pre, idx) => (
-                  <li key={idx}>{pre}</li>
+                  <li key={idx} className="flex items-start gap-2 text-gray-600">
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                    </svg>
+                    {pre}
+                  </li>
                 ))}
               </ul>
             </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6" style={{ height: 'calc(100vh - 400px)' }}>
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-100 px-4 py-2 border-b">
-              <h3 className="font-medium">Python 编辑器</h3>
+        {/* 编辑器和结果区域 */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6" style={{ minHeight: '500px' }}>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center justify-between">
+              <h3 className="font-medium text-white flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+                Python 编辑器
+              </h3>
+              <button
+                onClick={() => setShowSolution(!showSolution)}
+                className="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {showSolution ? '隐藏参考答案' : '查看参考答案'}
+              </button>
             </div>
-            <PythonEditor
-              initialCode={project.starterCode}
-              onRun={setExecutionResult}
-            />
+            <div className="flex-1 min-h-0">
+              <PythonEditor
+                initialCode={showSolution ? project.solutionCode : project.starterCode}
+                onRun={setExecutionResult}
+              />
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-100 px-4 py-2 border-b">
-              <h3 className="font-medium">执行结果</h3>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-gray-50 px-4 py-3 border-b">
+              <h3 className="font-medium text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                执行结果
+              </h3>
             </div>
-            <AnalysisResult result={executionResult} tabs={project.resultTabs} />
+            <div className="flex-1 min-h-0">
+              <AnalysisResult result={executionResult} tabs={project.resultTabs} />
+            </div>
           </div>
         </div>
 
+        {/* 练习任务区域 */}
         {project.tasks && project.tasks.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-            <h3 className="font-semibold mb-4">练习任务</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-800 text-lg flex items-center gap-2">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                练习任务
+              </h3>
+              <span className="text-sm text-gray-500">
+                {completedTasks} / {totalTasks} 已完成
+              </span>
+            </div>
             <div className="space-y-3">
-              {project.tasks.map((task, idx) => (
-                <div key={task.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
-                    {idx + 1}
+              {project.tasks.map((task, idx) => {
+                const isCompleted = isTaskCompleted(task.id);
+                return (
+                  <div 
+                    key={task.id} 
+                    className={`flex items-start gap-4 p-4 rounded-lg border transition-all ${
+                      isCompleted 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-gray-50 border-gray-200 hover:border-primary'
+                    }`}
+                  >
+                    <button
+                      onClick={() => completeTask(task.id)}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                        isCompleted
+                          ? 'bg-green-500 text-white'
+                          : 'border-2 border-gray-300 hover:border-primary cursor-pointer'
+                      }`}
+                    >
+                      {isCompleted && (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                        </svg>
+                      )}
+                    </button>
+                    <div className="flex-1">
+                      <p className={`font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                        {idx + 1}. {task.description}
+                      </p>
+                      {task.hint && (
+                        <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
+                          <span className="text-yellow-600">💡</span>
+                          提示: {task.hint}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{task.description}</p>
-                    {task.hint && (
-                      <p className="text-sm text-gray-500 mt-1">💡 提示: {task.hint}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

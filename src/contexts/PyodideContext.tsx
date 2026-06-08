@@ -6,6 +6,7 @@ interface ExecutionResult {
   stderr: string;
   result: any;
   error: boolean;
+  images: string[];
 }
 
 interface PyodideContextType {
@@ -24,14 +25,19 @@ const PyodideLoading: React.FC<{ progress: number }> = ({ progress }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
       <div className="text-center p-8 rounded-lg shadow-lg max-w-md">
-        <div className="text-2xl font-bold text-primary mb-4">加载 Pyodide</div>
+        <div className="text-2xl font-bold text-primary mb-4">加载 Python 环境</div>
         <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
           <div 
             className="bg-secondary h-4 rounded-full transition-all duration-300 ease-out" 
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        <p className="text-gray-600">正在准备 Python 运行环境...</p>
+        <p className="text-gray-600">
+          {progress < 30 ? '下载 Pyodide 核心...' : 
+           progress < 60 ? '加载基础库...' : 
+           progress < 80 ? '安装数据分析包...' : 
+           progress < 95 ? '配置运行环境...' : '准备完成！'}
+        </p>
       </div>
     </div>
   );
@@ -75,18 +81,27 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
           import matplotlib.pyplot as plt
           import base64
           import io
+          import sys
+
+          # 存储生成的图表
+          _generated_images = []
 
           def plot_to_base64():
               buf = io.BytesIO()
-              plt.savefig(buf, format='png')
+              plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
               buf.seek(0)
               img_str = base64.b64encode(buf.read()).decode('utf-8')
               plt.close()
               return img_str
 
+          def capture_plot():
+              img_str = plot_to_base64()
+              _generated_images.append(img_str)
+
           # 将函数添加到全局命名空间
-          import sys
           sys.modules['__main__'].plot_to_base64 = plot_to_base64
+          sys.modules['__main__'].capture_plot = capture_plot
+          sys.modules['__main__']._generated_images = _generated_images
         `);
 
         setLoadProgress(100);
@@ -115,34 +130,64 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
         stdout: '',
         stderr: 'Pyodide is not loaded yet',
         result: null,
-        error: true
+        error: true,
+        images: []
       };
     }
 
-    try {
-      // 捕获标准输出
-      let stdout = '';
-      let stderr = '';
+    // 捕获标准输出
+    let stdout = '';
+    let stderr = '';
 
+    try {
       // 重定向 stdout 和 stderr
       pyodide.setStdout({ write: (text: string) => { stdout += text; } });
       pyodide.setStderr({ write: (text: string) => { stderr += text; } });
 
+      // 清空之前的图片
+      await pyodide.runPythonAsync(`
+        _generated_images.clear()
+      `);
+
+      // 包装用户代码，自动捕获 plt.show()
+      const wrappedCode = `
+import matplotlib.pyplot as plt
+_original_show = plt.show
+
+def _capturing_show(*args, **kwargs):
+    capture_plot()
+    plt.close('all')
+
+plt.show = _capturing_show
+
+${code}
+
+# 最后检查是否有未显示的图表
+if len(plt.get_fignums()) > 0:
+    capture_plot()
+    plt.close('all')
+`;
+
       // 运行代码
-      const result = await pyodide.runPythonAsync(code);
+      const result = await pyodide.runPythonAsync(wrappedCode);
+
+      // 获取生成的图片
+      const images = pyodide.globals.get('_generated_images').toJs();
 
       return {
         stdout,
         stderr,
         result,
-        error: false
+        error: false,
+        images: Array.from(images)
       };
     } catch (error: any) {
       return {
-        stdout: '',
+        stdout,
         stderr: error.toString(),
         result: null,
-        error: true
+        error: true,
+        images: []
       };
     }
   };
@@ -156,7 +201,14 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
           gc.collect()
           # 重置全局变量
           import sys
-          sys.modules['__main__'].__dict__.clear()
+          # 保留必要的函数
+          keep_vars = {'plot_to_base64', 'capture_plot', '_generated_images'}
+          for key in list(sys.modules['__main__'].__dict__.keys()):
+              if not key.startswith('_') or key in keep_vars:
+                  continue
+              del sys.modules['__main__'].__dict__[key]
+          # 清空图片
+          _generated_images.clear()
           import matplotlib.pyplot as plt
           plt.close('all')
         `);
