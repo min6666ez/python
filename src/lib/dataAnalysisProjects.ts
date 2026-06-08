@@ -183,79 +183,21 @@ print("\n数据描述:")
 print(df.describe())
 `
     },
-    starterCode: `import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
-# 1. 加载数据（在实际环境中，这里会使用生成的df）
-# 查看数据基本信息
-print("=== 数据基本信息 ===")
-df.info()
-print("\n=== 数据描述 ===")
-df.describe()
-
-# 2. 重复值处理
-print("\n=== 重复值处理 ===")
-duplicate_count = df.duplicated().sum()
-print(f"重复记录数: {duplicate_count}")
-df = df.drop_duplicates()
-print(f"去重后数据形状: {df.shape}")
-
-# 3. 缺失值处理
-print("\n=== 缺失值处理 ===")
-print("缺失值统计:")
-print(df.isnull().sum())
-# 填充缺失的customer_id
-df['customer_id'] = df['customer_id'].fillna('UNKNOWN')
-print("填充后缺失值统计:")
-print(df.isnull().sum())
-
-# 4. 数据类型转换
-print("\n=== 数据类型转换 ===")
-# 确保order_date为日期类型
-df['order_date'] = pd.to_datetime(df['order_date'])
-print("数据类型:")
-print(df.dtypes)
-
-# 5. 异常值处理
-print("\n=== 异常值处理 ===")
-# 处理负数量
-print(f"负数量记录数: {(df['quantity'] < 0).sum()}")
-df['quantity'] = df['quantity'].abs()
-
-# 重新计算总金额
-df['total_amount'] = df['quantity'] * df['unit_price']
-
-# 检测total_amount的异常值
-Q1 = df['total_amount'].quantile(0.25)
-Q3 = df['total_amount'].quantile(0.75)
-IQR = Q3 - Q1
-lower_bound = Q1 - 1.5 * IQR
-upper_bound = Q3 + 1.5 * IQR
-
-outliers = df[(df['total_amount'] < lower_bound) | (df['total_amount'] > upper_bound)]
-print(f"异常值记录数: {len(outliers)}")
-print("异常值详情:")
-print(outliers[['order_id', 'total_amount']])
-
-# 可视化异常值
-plt.figure(figsize=(10, 6))
-plt.boxplot(df['total_amount'])
-plt.title('总金额箱线图')
-plt.ylabel('总金额')
-plt.grid(True, alpha=0.3)
-plt.show()
-print("\n异常值箱线图已保存")
-
-# 6. 数据清洗前后对比
-print("\n=== 清洗前后对比 ===")
-print(f"清洗前记录数: 1050")
-print(f"清洗后记录数: {len(df)}")
-print(f"清洗后数据形状: {df.shape}")
-
-# 7. 保存清洗后的数据
-print("\n=== 清洗后数据预览 ===")
+    starterCode: `# 数据清洗入门
+print("=== 数据信息 ===")
 print(df.head())
+
+# 练习1: 删除重复记录
+print("\n=== 练习1 ===")
+# 删除重复记录
+
+# 练习2: 填充缺失值
+print("\n=== 练习2 ===")
+# 填充 customer_id 列的缺失值
+
+# 练习3: 处理异常值
+print("\n=== 练习3 ===")
+# 处理负数数量
 `,
     solutionCode: `import pandas as pd
 import numpy as np
@@ -485,80 +427,21 @@ print("\n商品数量:")
 print(df['product_id'].nunique())
 `
     },
-    starterCode: `import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+    starterCode: `# 电商用户行为特征工程
+print("=== 数据预览 ===")
+print(df.head())
 
-# 1. 加载数据（在实际环境中，这里会使用生成的df）
-print("=== 数据基本信息 ===")
-df.info()
-print("\n=== 事件类型分布 ===")
-print(df['event_type'].value_counts())
+# 练习1: 提取时间特征
+print("\n=== 练习1 ===")
+# 提取 hour, day_of_week 特征
 
-# 2. 时间特征提取
-print("\n=== 时间特征提取 ===")
-df['hour'] = df['event_time'].dt.hour
-df['day_of_week'] = df['event_time'].dt.dayofweek
-df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+# 练习2: 用户行为统计
+print("\n=== 练习2 ===")
+# 按 user_id 统计购买次数
 
-# 3. 用户行为统计
-print("\n=== 用户行为统计 ===")
-user_stats = df.groupby('user_id').agg({
-    'event_type': ['count', lambda x: (x == 'purchase').sum()],
-    'session_id': 'nunique',
-    'product_id': 'nunique'
-}).reset_index()
-user_stats.columns = ['user_id', 'total_events', 'purchase_count', 'session_count', 'unique_products']
-user_stats['conversion_rate'] = user_stats['purchase_count'] / user_stats['total_events']
-print("用户行为统计前5行:")
-print(user_stats.head())
-
-# 4. 时间窗口特征
-print("\n=== 时间窗口特征 ===")
-# 按用户和时间排序
-df_sorted = df.sort_values(['user_id', 'event_time'])
-# 计算用户每次事件的时间差
-df_sorted['time_diff'] = df_sorted.groupby('user_id')['event_time'].diff().dt.total_seconds() / 60  # 转换为分钟
-
-# 5. 行为序列分析
-print("\n=== 行为序列分析 ===")
-# 计算转化漏斗
-funnel = df['event_type'].value_counts().reindex(['view', 'add_to_cart', 'purchase', 'favorite'])
-print("转化漏斗:")
-print(funnel)
-
-# 6. 可视化
-print("\n=== 数据可视化 ===")
-# 事件类型分布
-plt.figure(figsize=(10, 6))
-df['event_type'].value_counts().plot(kind='bar')
-plt.title('事件类型分布')
-plt.xlabel('事件类型')
-plt.ylabel('计数')
-plt.show()
-
-# 时段活跃度
-plt.figure(figsize=(10, 6))
-df['hour'].value_counts().sort_index().plot(kind='bar')
-plt.title('时段活跃度')
-plt.xlabel('小时')
-plt.ylabel('事件数')
-plt.show()
-
-# 热门商品
-plt.figure(figsize=(10, 6))
-top_products = df['product_id'].value_counts().head(10)
-top_products.plot(kind='bar')
-plt.title('热门商品TOP10')
-plt.xlabel('商品ID')
-plt.ylabel('点击次数')
-plt.show()
-
-print("\n特征工程完成！")
-print(f"提取的特征包括：")
-print("1. 时间特征：hour, day_of_week, is_weekend")
-print("2. 用户行为特征：total_events, purchase_count, session_count, unique_products, conversion_rate")
-print("3. 时间窗口特征：time_diff")
+# 练习3: 计算转化率
+print("\n=== 练习3 ===")
+# 计算转化率 = 购买次数 / 总事件数
 `,
     solutionCode: `import pandas as pd
 import numpy as np
