@@ -1418,8 +1418,30 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Pandas 基础'],
     estimatedTime: 60,
     dataset: { name: '大规模交易数据', description: '模拟5000笔交易', generationCode: 'import pandas as pd\nimport random\nrandom.seed(42)\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\']\ntransactions = []\nfor i in range(5000):\n    n = random.randint(2,5)\n    transactions.append(random.sample(products, n))\ndf = pd.DataFrame({\'Transaction\': range(1,5001), \'Item\': transactions})\nprint(f"生成 {len(transactions)} 笔交易")' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nprint("=== 分块处理演示 ===\n# 分块读取\ndf_chunked = np.array_split(df, 5)\nprint(f"分成 {len(df_chunked)} 个块")\n# 增量统计\nitem_counts = {}\nfor chunk in df_chunked:\n    for items in chunk[\'Item\']:\n        for item in items:\n            item_counts[item] = item_counts.get(item, 0) + 1\nprint("商品统计:", item_counts)',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nprint("=== 分块处理 ===\ndf_chunked = np.array_split(df, 5)\nitem_counts = {}\nfor i, chunk in enumerate(df_chunked):\n    print(f"处理块 {i+1}")\n    for items in chunk[\'Item\']:\n        for item in items:\n            item_counts[item] = item_counts.get(item, 0) + 1\nprint("最终统计:", sorted(item_counts.items(), key=lambda x: x[1], reverse=True))',
+    starterCode: `import pandas as pd
+import numpy as np
+print("=== 分块处理演示 ===")
+# 分块读取
+df_chunked = np.array_split(df, 5)
+print(f"分成 {len(df_chunked)} 个块")
+# 增量统计
+item_counts = {}
+for chunk in df_chunked:
+    for items in chunk['Item']:
+        for item in items:
+            item_counts[item] = item_counts.get(item, 0) + 1
+print("商品统计:", item_counts)`,
+    solutionCode: `import pandas as pd
+import numpy as np
+print("=== 分块处理 ===")
+df_chunked = np.array_split(df, 5)
+item_counts = {}
+for i, chunk in enumerate(df_chunked):
+    print(f"处理块 {i+1}")
+    for items in chunk['Item']:
+        for item in items:
+            item_counts[item] = item_counts.get(item, 0) + 1
+print("最终统计:", sorted(item_counts.items(), key=lambda x: x[1], reverse=True))`,
     resultTabs: [
       { id: 'chunk-stats', label: '分块统计', type: 'table' },
       { id: 'final-result', label: '最终结果', type: 'table' }
@@ -1441,8 +1463,41 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Pandas', 'Scikit-learn'],
     estimatedTime: 75,
     dataset: { name: '用户交易数据', description: '200个用户1年数据', generationCode: 'import pandas as pd\nimport numpy as np\nfrom datetime import datetime, timedelta\nnp.random.seed(42)\nn_users = 200\nuser_ids = [f"U_{i:03d}" for i in range(1,n_users+1)]\ntransactions = []\nfor user in user_ids:\n    n_orders = np.random.randint(1,50)\n    for _ in range(n_orders):\n        date = datetime(2024,1,1) + timedelta(days=np.random.randint(0,365))\n        amount = np.random.uniform(50,2000)\n        transactions.append({\'user_id\': user, \'order_date\': date, \'order_amount\': amount})\ndf = pd.DataFrame(transactions)\nprint(f"生成 {len(df)} 条交易记录")' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nfrom sklearn.cluster import KMeans\nfrom sklearn.preprocessing import StandardScaler\nprint("=== RFM计算 ===\nnow = df[\'order_date\'].max() + timedelta(days=1)\nrfm = df.groupby(\'user_id\').agg(\n    Recency=(\'order_date\', lambda x: (now - x.max()).days),\n    Frequency=(\'order_date\', \'count\'),\n    Monetary=(\'order_amount\', \'sum\')\n).reset_index()\nprint("RFM前5行:", rfm.head())',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.cluster import KMeans\nfrom sklearn.preprocessing import StandardScaler\nnow = df[\'order_date\'].max() + timedelta(days=1)\nrfm = df.groupby(\'user_id\').agg(\n    Recency=(\'order_date\', lambda x: (now - x.max()).days),\n    Frequency=(\'order_date\', \'count\'),\n    Monetary=(\'order_amount\', \'sum\')\n).reset_index()\nscaler = StandardScaler()\nrfm_scaled = scaler.fit_transform(rfm[[\'Recency\',\'Frequency\',\'Monetary\']])\n# 肘部法则\ninertias = []\nfor k in range(2,10):\n    kmeans = KMeans(n_clusters=k, random_state=42)\n    kmeans.fit(rfm_scaled)\n    inertias.append(kmeans.inertia_)\n# 选k=4\nkmeans = KMeans(n_clusters=4, random_state=42)\nrfm[\'Cluster\'] = kmeans.fit_predict(rfm_scaled)\nprint("聚类结果:", rfm.groupby(\'Cluster\').mean())',
+    starterCode: `import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+print("=== RFM计算 ===")
+now = df['order_date'].max() + timedelta(days=1)
+rfm = df.groupby('user_id').agg(
+    Recency=('order_date', lambda x: (now - x.max()).days),
+    Frequency=('order_date', 'count'),
+    Monetary=('order_amount', 'sum')
+).reset_index()
+print("RFM前5行:", rfm.head())`,
+    solutionCode: `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+now = df['order_date'].max() + timedelta(days=1)
+rfm = df.groupby('user_id').agg(
+    Recency=('order_date', lambda x: (now - x.max()).days),
+    Frequency=('order_date', 'count'),
+    Monetary=('order_amount', 'sum')
+).reset_index()
+scaler = StandardScaler()
+rfm_scaled = scaler.fit_transform(rfm[['Recency','Frequency','Monetary']])
+# 肘部法则
+inertias = []
+for k in range(2,10):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(rfm_scaled)
+    inertias.append(kmeans.inertia_)
+# 选k=4
+kmeans = KMeans(n_clusters=4, random_state=42)
+rfm['Cluster'] = kmeans.fit_predict(rfm_scaled)
+print("聚类结果:", rfm.groupby('Cluster').mean())`,
     resultTabs: [
       { id: 'rfm-table', label: 'RFM表', type: 'table' },
       { id: 'clusters', label: '聚类结果', type: 'table' },
@@ -1465,8 +1520,31 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Pandas', 'Scikit-learn'],
     estimatedTime: 60,
     dataset: { name: '商品特征数据', description: '20种商品的特征', generationCode: 'import pandas as pd\nimport numpy as np\nnp.random.seed(42)\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\',\'尿布\',\'啤酒\',\'洗发水\',\'牙膏\',\'卫生纸\',\'洗涤剂\',\'咖啡\',\'茶\',\'糖果\',\'巧克力\']\ndf = pd.DataFrame({\n    \'Product\': products,\n    \'Price\': np.random.uniform(5,200,20),\n    \'Sales\': np.random.randint(100,5000,20),\n    \'UniqueUsers\': np.random.randint(50,2000,20),\n    \'ReturnRate\': np.random.uniform(0.01,0.2,20)\n})\nprint("商品数据:", df)' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram\nimport matplotlib.pyplot as plt\nprint("=== 层次聚类 ===\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.show()',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram, fcluster\nimport matplotlib.pyplot as plt\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.show()\ndf[\'Cluster\'] = fcluster(Z, t=3, criterion=\'maxclust\')\nprint("聚类结果:", df.groupby(\'Cluster\')[\'Product\'].apply(list))',
+    starterCode: `import pandas as pd
+import numpy as np
+from scipy.cluster.hierarchy import linkage, dendrogram
+import matplotlib.pyplot as plt
+print("=== 层次聚类 ===")
+X = df[['Price','Sales','UniqueUsers','ReturnRate']]
+Z = linkage(X, method='ward')
+plt.figure(figsize=(12,6))
+dendrogram(Z, labels=df['Product'].values, leaf_rotation=90)
+plt.title('商品层次聚类树状图')
+plt.tight_layout()
+plt.show()`,
+    solutionCode: `import pandas as pd
+import numpy as np
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+import matplotlib.pyplot as plt
+X = df[['Price','Sales','UniqueUsers','ReturnRate']]
+Z = linkage(X, method='ward')
+plt.figure(figsize=(12,6))
+dendrogram(Z, labels=df['Product'].values, leaf_rotation=90)
+plt.title('商品层次聚类树状图')
+plt.tight_layout()
+plt.show()
+df['Cluster'] = fcluster(Z, t=3, criterion='maxclust')
+print("聚类结果:", df.groupby('Cluster')['Product'].apply(list))`,
     resultTabs: [
       { id: 'product-data', label: '商品数据', type: 'table' },
       { id: 'clusters', label: '聚类结果', type: 'table' },
@@ -1489,8 +1567,32 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Scikit-learn', '聚类基础'],
     estimatedTime: 60,
     dataset: { name: '订单特征数据', description: '正常和刷单订单', generationCode: 'import pandas as pd\nimport numpy as np\nnp.random.seed(42)\nn_normal = 500\nn_fraud = 50\nnormal = pd.DataFrame({\n    \'Amount\': np.random.normal(200, 100, n_normal),\n    \'Frequency\': np.random.normal(5, 2, n_normal),\n    \'AvgInterval\': np.random.normal(7, 3, n_normal),\n    \'Label\': 0\n})\nfraud = pd.DataFrame({\n    \'Amount\': np.random.normal(500, 200, n_fraud),\n    \'Frequency\': np.random.normal(20, 5, n_fraud),\n    \'AvgInterval\': np.random.normal(1, 0.5, n_fraud),\n    \'Label\': 1\n})\ndf = pd.concat([normal, fraud], ignore_index=True)\nprint("数据形状:", df.shape)' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.cluster import DBSCAN, KMeans\nfrom sklearn.preprocessing import StandardScaler\nprint("=== DBSCAN异常检测 ===\nX = df[[\'Amount\',\'Frequency\',\'AvgInterval\']]\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\ndbscan = DBSCAN(eps=0.5, min_samples=5)\ndf[\'DBSCAN_Cluster\'] = dbscan.fit_predict(X_scaled)\ndf[\'IsAnomaly\'] = df[\'DBSCAN_Cluster\'] == -1\nprint("异常样本数:", df[\'IsAnomaly\'].sum())',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.cluster import DBSCAN, KMeans\nfrom sklearn.preprocessing import StandardScaler\nX = df[[\'Amount\',\'Frequency\',\'AvgInterval\']]\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\ndbscan = DBSCAN(eps=0.5, min_samples=5)\ndf[\'DBSCAN_Cluster\'] = dbscan.fit_predict(X_scaled)\ndf[\'IsAnomaly\'] = df[\'DBSCAN_Cluster\'] == -1\nprint("异常样本数:", df[\'IsAnomaly\'].sum())\nprint("异常样本详情:", df[df[\'IsAnomaly\']].head())',
+    starterCode: `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.preprocessing import StandardScaler
+print("=== DBSCAN异常检测 ===")
+X = df[['Amount','Frequency','AvgInterval']]
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+dbscan = DBSCAN(eps=0.5, min_samples=5)
+df['DBSCAN_Cluster'] = dbscan.fit_predict(X_scaled)
+df['IsAnomaly'] = df['DBSCAN_Cluster'] == -1
+print("异常样本数:", df['IsAnomaly'].sum())`,
+    solutionCode: `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.preprocessing import StandardScaler
+X = df[['Amount','Frequency','AvgInterval']]
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+dbscan = DBSCAN(eps=0.5, min_samples=5)
+df['DBSCAN_Cluster'] = dbscan.fit_predict(X_scaled)
+df['IsAnomaly'] = df['DBSCAN_Cluster'] == -1
+print("异常样本数:", df['IsAnomaly'].sum())
+print("异常样本详情:", df[df['IsAnomaly']].head())`,
     resultTabs: [
       { id: 'data', label: '数据预览', type: 'table' },
       { id: 'anomalies', label: '异常样本', type: 'table' },
@@ -1513,8 +1615,37 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['聚类', '关联规则'],
     estimatedTime: 90,
     dataset: { name: '综合数据', description: '用户分群和购物篮数据', generationCode: 'import pandas as pd\nimport numpy as np\nimport random\nnp.random.seed(42)\n# 用户分群\nusers = [f"U_{i:03d}" for i in range(1,201)]\nclusters = np.random.randint(0,4,200)\nuser_cluster = pd.DataFrame({\'user_id\': users, \'cluster\': clusters})\n# 购物篮\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\']\ntransactions = []\nfor user in users:\n    n_orders = np.random.randint(1,10)\n    for _ in range(n_orders):\n        n_items = random.randint(2,4)\n        items = random.sample(products, n_items)\n        transactions.append({\'user_id\': user, \'items\': items})\nbaskets = pd.DataFrame(transactions)\nprint("用户数:", len(user_cluster), "交易数:", len(baskets))' },
-    starterCode: 'import pandas as pd\nfrom mlxtend.preprocessing import TransactionEncoder\nfrom mlxtend.frequent_patterns import apriori, association_rules\nprint("=== 分群关联规则 ===\n# 合并数据\ndf_merged = baskets.merge(user_cluster, on=\'user_id\')\n# 按群分析\nfor c in range(4):\n    print(f"\\n=== 群 {c} ===")\n    cluster_baskets = df_merged[df_merged[\'cluster\'] == c][\'items\'].tolist()\n    te = TransactionEncoder()\n    te_ary = te.fit(cluster_baskets).transform(cluster_baskets)\n    df_enc = pd.DataFrame(te_ary, columns=te.columns_)\n    freq = apriori(df_enc, min_support=0.1, use_colnames=True)\n    rules = association_rules(freq, metric="confidence", min_threshold=0.5)\n    print(f"规则数: {len(rules)}")',
-    solutionCode: 'import pandas as pd\nfrom mlxtend.preprocessing import TransactionEncoder\nfrom mlxtend.frequent_patterns import apriori, association_rules\n# 合并数据\ndf_merged = baskets.merge(user_cluster, on=\'user_id\')\ncluster_rules = {}\nfor c in range(4):\n    cluster_baskets = df_merged[df_merged[\'cluster\'] == c][\'items\'].tolist()\n    te = TransactionEncoder()\n    te_ary = te.fit(cluster_baskets).transform(cluster_baskets)\n    df_enc = pd.DataFrame(te_ary, columns=te.columns_)\n    freq = apriori(df_enc, min_support=0.1, use_colnames=True)\n    rules = association_rules(freq, metric="confidence", min_threshold=0.5)\n    cluster_rules[c] = rules\nprint("各群规则数:", {c: len(r) for c, r in cluster_rules.items()})',
+    starterCode: `import pandas as pd
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
+print("=== 分群关联规则 ===")
+# 合并数据
+df_merged = baskets.merge(user_cluster, on='user_id')
+# 按群分析
+for c in range(4):
+    print(f"\\n=== 群 {c} ===")
+    cluster_baskets = df_merged[df_merged['cluster'] == c]['items'].tolist()
+    te = TransactionEncoder()
+    te_ary = te.fit(cluster_baskets).transform(cluster_baskets)
+    df_enc = pd.DataFrame(te_ary, columns=te.columns_)
+    freq = apriori(df_enc, min_support=0.1, use_colnames=True)
+    rules = association_rules(freq, metric="confidence", min_threshold=0.5)
+    print(f"规则数: {len(rules)}")`,
+    solutionCode: `import pandas as pd
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
+# 合并数据
+df_merged = baskets.merge(user_cluster, on='user_id')
+cluster_rules = {}
+for c in range(4):
+    cluster_baskets = df_merged[df_merged['cluster'] == c]['items'].tolist()
+    te = TransactionEncoder()
+    te_ary = te.fit(cluster_baskets).transform(cluster_baskets)
+    df_enc = pd.DataFrame(te_ary, columns=te.columns_)
+    freq = apriori(df_enc, min_support=0.1, use_colnames=True)
+    rules = association_rules(freq, metric="confidence", min_threshold=0.5)
+    cluster_rules[c] = rules
+print("各群规则数:", {c: len(r) for c, r in cluster_rules.items()})`,
     resultTabs: [
       { id: 'cluster-overview', label: '分群概览', type: 'table' },
       { id: 'rules-by-cluster', label: '各群规则', type: 'table' },
@@ -1537,8 +1668,46 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['前9个项目'],
     estimatedTime: 120,
     dataset: { name: '完整电商数据', description: '用户、订单、商品数据', generationCode: 'import pandas as pd\nimport numpy as np\nfrom datetime import datetime, timedelta\nnp.random.seed(42)\n# 用户表\nusers = pd.DataFrame({\'user_id\': [f"U_{i:03d}" for i in range(1,201)]})\n# 订单表\norders = []\nfor user in users[\'user_id\']:\n    n = np.random.randint(1,50)\n    for _ in range(n):\n        date = datetime(2024,1,1) + timedelta(days=np.random.randint(0,365))\n        amount = np.random.uniform(50,2000)\n        orders.append({\'user_id\': user, \'order_date\': date, \'amount\': amount})\norders = pd.DataFrame(orders)\nprint("用户数:", len(users), "订单数:", len(orders))' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nprint("=== 完整分析流程 ===\n# 1. 数据清洗\nprint("数据清洗中...")\n# 2. RFM\nnow = orders[\'order_date\'].max() + timedelta(days=1)\nrfm = orders.groupby(\'user_id\').agg(\n    Recency=(\'order_date\', lambda x: (now - x.max()).days),\n    Frequency=(\'order_date\', \'count\'),\n    Monetary=(\'amount\', \'sum\')\n).reset_index()\n# 3. KPI\nprint("总销售额:", orders[\'amount\'].sum())\nprint("订单数:", len(orders))\nprint("用户数:", orders[\'user_id\'].nunique())',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\n# 完整分析流程\nprint("=== 完整运营分析 ===\n# 1. KPI\nprint("总销售额: ¥{:,.2f}".format(orders[\'amount\'].sum()))\nprint("总订单数:", len(orders))\nprint("活跃用户数:", orders[\'user_id\'].nunique())\nprint("客单价: ¥{:,.2f}".format(orders[\'amount\'].sum()/len(orders)))\n# 2. 时间趋势\norders[\'month\'] = orders[\'order_date\'].dt.to_period(\'M\')\nmonthly = orders.groupby(\'month\')[\'amount\'].sum()\nprint("月度销售额:", monthly)\n# 3. RFM\nnow = orders[\'order_date\'].max() + timedelta(days=1)\nrfm = orders.groupby(\'user_id\').agg(\n    Recency=(\'order_date\', lambda x: (now - x.max()).days),\n    Frequency=(\'order_date\', \'count\'),\n    Monetary=(\'amount\', \'sum\')\n).reset_index()\nprint("RFM统计:", rfm.describe())\nprint("\\n分析完成！")',
+    starterCode: `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+print("=== 完整分析流程 ===")
+# 1. 数据清洗
+print("数据清洗中...")
+# 2. RFM
+now = orders['order_date'].max() + timedelta(days=1)
+rfm = orders.groupby('user_id').agg(
+    Recency=('order_date', lambda x: (now - x.max()).days),
+    Frequency=('order_date', 'count'),
+    Monetary=('amount', 'sum')
+).reset_index()
+# 3. KPI
+print("总销售额:", orders['amount'].sum())
+print("订单数:", len(orders))
+print("用户数:", orders['user_id'].nunique())`,
+    solutionCode: `import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+# 完整分析流程
+print("=== 完整运营分析 ===")
+# 1. KPI
+print("总销售额: ¥{:,.2f}".format(orders['amount'].sum()))
+print("总订单数:", len(orders))
+print("活跃用户数:", orders['user_id'].nunique())
+print("客单价: ¥{:,.2f}".format(orders['amount'].sum()/len(orders)))
+# 2. 时间趋势
+orders['month'] = orders['order_date'].dt.to_period('M')
+monthly = orders.groupby('month')['amount'].sum()
+print("月度销售额:", monthly)
+# 3. RFM
+now = orders['order_date'].max() + timedelta(days=1)
+rfm = orders.groupby('user_id').agg(
+    Recency=('order_date', lambda x: (now - x.max()).days),
+    Frequency=('order_date', 'count'),
+    Monetary=('amount', 'sum')
+).reset_index()
+print("RFM统计:", rfm.describe())
+print("\\n分析完成！")`,
     resultTabs: [
       { id: 'kpi', label: 'KPI', type: 'table' },
       { id: 'trends', label: '趋势分析', type: 'chart' },
