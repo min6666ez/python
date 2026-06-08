@@ -244,7 +244,7 @@ plt.boxplot(df['total_amount'])
 plt.title('总金额箱线图')
 plt.ylabel('总金额')
 plt.grid(True, alpha=0.3)
-plt.savefig('boxplot.png')
+plt.show()
 print("\n异常值箱线图已保存")
 
 # 6. 数据清洗前后对比
@@ -318,7 +318,7 @@ plt.boxplot(df['total_amount'])
 plt.title('总金额箱线图')
 plt.ylabel('总金额')
 plt.grid(True, alpha=0.3)
-plt.savefig('boxplot.png')
+plt.show()
 print("\n异常值箱线图已保存")
 
 # 6. 处理异常值（使用截断法）
@@ -535,7 +535,7 @@ df['event_type'].value_counts().plot(kind='bar')
 plt.title('事件类型分布')
 plt.xlabel('事件类型')
 plt.ylabel('计数')
-plt.savefig('event_distribution.png')
+plt.show()
 
 # 时段活跃度
 plt.figure(figsize=(10, 6))
@@ -543,7 +543,7 @@ df['hour'].value_counts().sort_index().plot(kind='bar')
 plt.title('时段活跃度')
 plt.xlabel('小时')
 plt.ylabel('事件数')
-plt.savefig('hourly_activity.png')
+plt.show()
 
 # 热门商品
 plt.figure(figsize=(10, 6))
@@ -552,7 +552,7 @@ top_products.plot(kind='bar')
 plt.title('热门商品TOP10')
 plt.xlabel('商品ID')
 plt.ylabel('点击次数')
-plt.savefig('top_products.png')
+plt.show()
 
 print("\n特征工程完成！")
 print(f"提取的特征包括：")
@@ -649,7 +649,7 @@ sns.countplot(data=df, x='event_type', order=df['event_type'].value_counts().ind
 plt.title('事件类型分布')
 plt.xlabel('事件类型')
 plt.ylabel('计数')
-plt.savefig('event_distribution.png')
+plt.show()
 
 # 时段活跃度
 plt.figure(figsize=(10, 6))
@@ -657,7 +657,7 @@ sns.countplot(data=df, x='hour')
 plt.title('时段活跃度')
 plt.xlabel('小时')
 plt.ylabel('事件数')
-plt.savefig('hourly_activity.png')
+plt.show()
 
 # 热门商品
 plt.figure(figsize=(10, 6))
@@ -666,7 +666,7 @@ top_products.plot(kind='bar')
 plt.title('热门商品TOP10')
 plt.xlabel('商品ID')
 plt.ylabel('点击次数')
-plt.savefig('top_products.png')
+plt.show()
 
 # 转化漏斗图
 plt.figure(figsize=(10, 6))
@@ -674,7 +674,7 @@ funnel.plot(kind='bar')
 plt.title('转化漏斗')
 plt.xlabel('事件类型')
 plt.ylabel('数量')
-plt.savefig('funnel.png')
+plt.show()
 
 print("\n特征工程完成！")
 print(f"提取的特征包括：")
@@ -828,7 +828,7 @@ plt.title('每日销售额趋势')
 plt.xlabel('日期')
 plt.ylabel('销售额')
 plt.grid(True, alpha=0.3)
-plt.savefig('sales_trend.png')
+plt.show()
 
 # 3. 时间特征提取
 print("\n=== 时间特征提取 ===")
@@ -883,7 +883,7 @@ plt.title('星期几平均销售额')
 plt.xlabel('星期几')
 plt.ylabel('平均销售额')
 plt.xticks(range(7), ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-plt.savefig('weekday_sales.png')
+plt.show()
 
 # 滞后特征散点图
 plt.figure(figsize=(10, 6))
@@ -892,7 +892,7 @@ plt.title('滞后1天 vs 当前销售额')
 plt.xlabel('滞后1天销售额')
 plt.ylabel('当前销售额')
 plt.grid(True, alpha=0.3)
-plt.savefig('lag_1_scatter.png')
+plt.show()
 
 # 滚动均值对比
 plt.figure(figsize=(12, 6))
@@ -904,7 +904,7 @@ plt.xlabel('日期')
 plt.ylabel('销售额')
 plt.legend()
 plt.grid(True, alpha=0.3)
-plt.savefig('rolling_means.png')
+plt.show()
 
 print("\n特征工程完成！")
 print(f"生成的特征包括：")
@@ -931,7 +931,7 @@ plt.title('每日销售额趋势')
 plt.xlabel('日期')
 plt.ylabel('销售额')
 plt.grid(True, alpha=0.3)
-plt.savefig('sales_trend.png')
+plt.show()
 
 # 3. 时间特征提取
 print("\n=== 时间特征提取 ===")
@@ -1004,7 +1004,7 @@ plt.title('星期几平均销售额')
 plt.xlabel('星期几')
 plt.ylabel('平均销售额')
 plt.xticks(range(7), ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-plt.savefig('weekday_sales.png')
+plt.show()
 
 # 滞后特征散点图
 plt.figure(figsize=(10, 6))
@@ -1013,7 +1013,7 @@ plt.title('滞后1天 vs 当前销售额')
 plt.xlabel('滞后1天销售额')
 plt.ylabel('当前销售额')
 plt.grid(True, alpha=0.3)
-plt.savefig('lag_1_scatter.png')
+plt.show()
 
 # 滚动均值对比
 plt.figure(figsize=(12, 6))
@@ -1025,13 +1025,13 @@ plt.xlabel('日期')
 plt.ylabel('销售额')
 plt.legend()
 plt.grid(True, alpha=0.3)
-plt.savefig('rolling_means.png')
+plt.show()
 
 # 相关性热力图
 plt.figure(figsize=(12, 10))
 sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f')
 plt.title('特征相关性热力图')
-plt.savefig('correlation_heatmap.png')
+plt.show()
 
 print("\n特征工程完成！")
 print(f"生成的特征包括：")
@@ -1236,7 +1236,7 @@ plt.title('Top 10 频繁项集')
 plt.xlabel('商品组合')
 plt.ylabel('支持度')
 plt.tight_layout()
-plt.savefig('frequent_itemsets.png')
+plt.show()
 
 # 规则散点图
 plt.figure(figsize=(10, 6))
@@ -1246,7 +1246,7 @@ plt.title('关联规则散点图')
 plt.xlabel('支持度')
 plt.ylabel('置信度')
 plt.grid(True, alpha=0.3)
-plt.savefig('rules_scatter.png')
+plt.show()
 
 print("\n关联规则挖掘完成！")
 print(f"关键发现：")
@@ -1335,7 +1335,7 @@ plt.title('Top 10 频繁商品组合')
 plt.xlabel('商品组合')
 plt.ylabel('支持度')
 plt.tight_layout()
-plt.savefig('frequent_itemsets.png')
+plt.show()
 
 # 规则散点图（带颜色编码）
 plt.figure(figsize=(10, 6))
@@ -1354,7 +1354,7 @@ for i, row in strong_rules.iterrows():
                     (row['support'], row['confidence']),
                     xytext=(5, 5), textcoords='offset points',
                     fontsize=8, bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="gray", alpha=0.8))
-plt.savefig('rules_scatter.png')
+plt.show()
 
 # 热力图（置信度矩阵）
 print("\n=== 生成置信度热力图 ===")
@@ -1377,7 +1377,7 @@ plt.figure(
 sns.heatmap(confidence_matrix, annot=True, cmap='coolwarm', fmt='.2f', cbar=True)
 plt.title('商品关联置信度热力图')
 plt.tight_layout()
-plt.savefig('confidence_heatmap.png')
+plt.show()
 
 print("\n关联规则挖掘完成！")
 print(f"关键发现：")
@@ -1465,8 +1465,8 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Pandas', 'Scikit-learn'],
     estimatedTime: 60,
     dataset: { name: '商品特征数据', description: '20种商品的特征', generationCode: 'import pandas as pd\nimport numpy as np\nnp.random.seed(42)\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\',\'尿布\',\'啤酒\',\'洗发水\',\'牙膏\',\'卫生纸\',\'洗涤剂\',\'咖啡\',\'茶\',\'糖果\',\'巧克力\']\ndf = pd.DataFrame({\n    \'Product\': products,\n    \'Price\': np.random.uniform(5,200,20),\n    \'Sales\': np.random.randint(100,5000,20),\n    \'UniqueUsers\': np.random.randint(50,2000,20),\n    \'ReturnRate\': np.random.uniform(0.01,0.2,20)\n})\nprint("商品数据:", df)' },
-    starterCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram\nimport matplotlib.pyplot as plt\nprint("=== 层次聚类 ===\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.savefig(\'dendrogram.png\')',
-    solutionCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram, fcluster\nimport matplotlib.pyplot as plt\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.savefig(\'dendrogram.png\')\ndf[\'Cluster\'] = fcluster(Z, t=3, criterion=\'maxclust\')\nprint("聚类结果:", df.groupby(\'Cluster\')[\'Product\'].apply(list))',
+    starterCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram\nimport matplotlib.pyplot as plt\nprint("=== 层次聚类 ===\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.show()',
+    solutionCode: 'import pandas as pd\nimport numpy as np\nfrom scipy.cluster.hierarchy import linkage, dendrogram, fcluster\nimport matplotlib.pyplot as plt\nX = df[[\'Price\',\'Sales\',\'UniqueUsers\',\'ReturnRate\']]\nZ = linkage(X, method=\'ward\')\nplt.figure(figsize=(12,6))\ndendrogram(Z, labels=df[\'Product\'].values, leaf_rotation=90)\nplt.title(\'商品层次聚类树状图\')\nplt.tight_layout()\nplt.show()\ndf[\'Cluster\'] = fcluster(Z, t=3, criterion=\'maxclust\')\nprint("聚类结果:", df.groupby(\'Cluster\')[\'Product\'].apply(list))',
     resultTabs: [
       { id: 'product-data', label: '商品数据', type: 'table' },
       { id: 'clusters', label: '聚类结果', type: 'table' },
