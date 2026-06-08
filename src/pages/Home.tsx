@@ -161,9 +161,9 @@ export default function Home({ user }: HomeProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="fade-in">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-lg bg-gradient-to-r from-yellow-200 via-orange-300 to-pink-300 bg-clip-text text-transparent">
                 掌握数据分析技能，<br />
-                <span className="text-secondary">开启职业新篇章</span>
+                <span className="text-white">开启职业新篇章</span>
               </h1>
               <p className="text-xl text-white mb-8 max-w-lg drop-shadow-md">
                 专为商务数据分析与应用专业学生设计的在线学习平台，提供完整的课程体系和互动式学习体验

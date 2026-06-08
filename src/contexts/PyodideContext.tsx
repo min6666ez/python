@@ -20,6 +20,150 @@ interface PyodideContextType {
 
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
+const checkSyntaxErrors = (code: string): string[] => {
+  const errors: string[] = [];
+  const lines = code.split('\n');
+  
+  // 检查常见的语法错误
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+    const lineNumber = i + 1;
+    
+    // 检查冒号后是否缺少缩进（for/if/while/def/class）
+    if (trimmedLine.match(/^(for|if|elif|else|while|def|class)\s*.+:$/)) {
+      const nextLine = lines[i + 1];
+      if (nextLine && nextLine.trim() !== '' && !nextLine.startsWith(' ') && !nextLine.startsWith('\t')) {
+        errors.push(`第 ${lineNumber} 行: 冒号后缺少缩进`);
+      }
+    }
+    
+    // 检查字符串是否闭合
+    const singleQuotes = (trimmedLine.match(/'/g) || []).length;
+    const doubleQuotes = (trimmedLine.match(/"/g) || []).length;
+    if (singleQuotes % 2 !== 0) {
+      errors.push(`第 ${lineNumber} 行: 单引号未闭合`);
+    }
+    if (doubleQuotes % 2 !== 0) {
+      errors.push(`第 ${lineNumber} 行: 双引号未闭合`);
+    }
+    
+    // 检查括号是否匹配
+    const openParens = (trimmedLine.match(/\(/g) || []).length;
+    const closeParens = (trimmedLine.match(/\)/g) || []).length;
+    if (openParens !== closeParens) {
+      errors.push(`第 ${lineNumber} 行: 括号不匹配 (${openParens}个左括号, ${closeParens}个右括号)`);
+    }
+    
+    // 检查中括号是否匹配
+    const openBrackets = (trimmedLine.match(/\[/g) || []).length;
+    const closeBrackets = (trimmedLine.match(/\]/g) || []).length;
+    if (openBrackets !== closeBrackets) {
+      errors.push(`第 ${lineNumber} 行: 中括号不匹配`);
+    }
+    
+    // 检查花括号是否匹配
+    const openBraces = (trimmedLine.match(/\{/g) || []).length;
+    const closeBraces = (trimmedLine.match(/\}/g) || []).length;
+    if (openBraces !== closeBraces) {
+      errors.push(`第 ${lineNumber} 行: 花括号不匹配`);
+    }
+    
+    // 检查常见拼写错误
+    const commonMisspellings: { [key: string]: string } = {
+      'importt': 'import',
+      'improt': 'import',
+      'pandas': 'pandas',
+      'pdas': 'pandas',
+      'numpy': 'numpy',
+      'numpi': 'numpy',
+      'matplotlib': 'matplotlib',
+      'plt': 'plt',
+      'df': 'df',
+      'printt': 'print',
+      'prnt': 'print',
+      'prnit': 'print',
+      'retun': 'return',
+      'retrun': 'return',
+      'defi': 'def',
+      'functon': 'function',
+      'if': 'if',
+      'elif': 'elif',
+      'else': 'else',
+      'whlie': 'while',
+      'forr': 'for',
+      'in': 'in',
+      'and': 'and',
+      'or': 'or',
+      'not': 'not',
+      'true': 'True',
+      'false': 'False',
+      'none': 'None',
+      'classs': 'class',
+      'self': 'self',
+      'superr': 'super',
+      'init': '__init__',
+      'len': 'len',
+      'rang': 'range',
+      'appendd': 'append',
+      'extendl': 'extend',
+      'remov': 'remove',
+      'pop': 'pop',
+      'sortt': 'sort',
+      'sorted': 'sorted',
+      'filtr': 'filter',
+      'map': 'map',
+      'lambd': 'lambda',
+      'try': 'try',
+      'excep': 'except',
+      'finallyy': 'finally',
+      'rais': 'raise',
+      'withh': 'with',
+      'as': 'as',
+      'fromm': 'from',
+      'import': 'import',
+      'del': 'del',
+      'passs': 'pass',
+      'breakk': 'break',
+      'continu': 'continue',
+      'yieldd': 'yield',
+      'assert': 'assert',
+      'globall': 'global',
+      'nonlocal': 'nonlocal',
+      'is': 'is',
+      'isnot': 'is not',
+      '==': '==',
+      '!=': '!=',
+      '<=': '<=',
+      '>=': '>=',
+    };
+    
+    for (const [wrong, correct] of Object.entries(commonMisspellings)) {
+      if (trimmedLine.includes(wrong) && !trimmedLine.includes(correct)) {
+        errors.push(`第 ${lineNumber} 行: 可能拼写错误 '${wrong}'，应为 '${correct}'`);
+      }
+    }
+    
+    // 检查常见的语法错误模式
+    if (trimmedLine.includes('= =') || trimmedLine.includes('===')) {
+      errors.push(`第 ${lineNumber} 行: 比较运算符错误，应为 '=='`);
+    }
+    
+    if (trimmedLine.includes('! =')) {
+      errors.push(`第 ${lineNumber} 行: 不等于运算符错误，应为 '!='`);
+    }
+    
+    // 检查缩进错误（混用空格和制表符）
+    const hasSpaces = line.startsWith(' ');
+    const hasTabs = line.startsWith('\t');
+    if (hasSpaces && trimmedLine.includes('\t')) {
+      errors.push(`第 ${lineNumber} 行: 缩进混用了空格和制表符`);
+    }
+  }
+  
+  return errors;
+};
+
 export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [pyodide, setPyodide] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +182,18 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
     let errorMessage = '';
 
     try {
+      // 先检查语法错误
+      const syntaxErrors = checkSyntaxErrors(code);
+      if (syntaxErrors.length > 0) {
+        return {
+          stdout: '',
+          stderr: '语法错误:\n' + syntaxErrors.join('\n'),
+          result: null,
+          error: true,
+          images: []
+        };
+      }
+
       const lines = code.split('\n');
       for (const line of lines) {
         const trimmedLine = line.trim();
