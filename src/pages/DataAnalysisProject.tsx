@@ -10,8 +10,7 @@ export const DataAnalysisProject: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [showSolution, setShowSolution] = useState(false);
-  const [isGeneratingDataset, setIsGeneratingDataset] = useState(false);
-  const { runPython, isLoading } = usePyodide();
+  const { runPython } = usePyodide();
 
   const project = dataAnalysisProjects.find(p => p.id === projectId);
   const { completeTask, isTaskCompleted, getCompletedTasksCount } = useProjectProgress(projectId || '');
@@ -20,41 +19,21 @@ export const DataAnalysisProject: React.FC = () => {
   useEffect(() => {
     setExecutionResult(null);
     setShowSolution(false);
-    setIsGeneratingDataset(false);
   }, [projectId]);
 
-  // 处理代码运行：合并数据集生成代码和用户代码一起执行
+  // 处理代码运行
   const handleRunCode = useCallback(async (userCode: string) => {
-    if (isLoading) {
-      setExecutionResult({
-        stdout: '',
-        stderr: 'Python环境正在加载中，请稍候...',
-        result: null,
-        error: true,
-        images: []
-      });
-      return;
-    }
-
-    setIsGeneratingDataset(true);
+    setExecutionResult({
+      stdout: '正在执行代码...\n',
+      stderr: '',
+      result: null,
+      error: false,
+      images: []
+    });
     
     try {
-      // 合并代码：数据集生成代码 + 用户代码
-      const combinedCode = project?.dataset?.generationCode 
-        ? `${project.dataset.generationCode}\n\n${userCode}`
-        : userCode;
-      
-      setExecutionResult({
-        stdout: '正在执行代码...\n',
-        stderr: '',
-        result: null,
-        error: false,
-        images: []
-      });
-      
-      const result = await runPython(combinedCode);
+      const result = await runPython(userCode);
       setExecutionResult(result);
-      
     } catch (error) {
       setExecutionResult({
         stdout: '',
@@ -63,10 +42,8 @@ export const DataAnalysisProject: React.FC = () => {
         error: true,
         images: []
       });
-    } finally {
-      setIsGeneratingDataset(false);
     }
-  }, [project, isLoading, runPython]);
+  }, [runPython]);
 
   if (!project) {
     return (
@@ -276,7 +253,6 @@ export const DataAnalysisProject: React.FC = () => {
               <PythonEditor
                 initialCode={showSolution ? project.solutionCode : project.starterCode}
                 onRun={handleRunCode}
-                isExecuting={isGeneratingDataset}
               />
             </div>
           </div>
