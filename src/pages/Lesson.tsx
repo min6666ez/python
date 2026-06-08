@@ -1,8 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { python } from '@codemirror/lang-python';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { courses } from '../lib/courses';
 
 // 模拟Pyodide加载
@@ -149,11 +146,11 @@ export default function Lesson() {
               
               {/* 代码编辑器 */}
               <div className="border rounded-md overflow-hidden">
-                <CodeMirror
+                <textarea
                   value={code}
-                  onChange={(value) => setCode(value)}
-                  extensions={[python(), oneDark]}
-                  className="min-h-[300px]"
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full p-3 font-mono text-sm bg-gray-900 text-gray-100 min-h-[300px] resize-none focus:outline-none"
+                  spellCheck={false}
                 />
               </div>
               

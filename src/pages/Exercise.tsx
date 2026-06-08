@@ -1,8 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { python } from '@codemirror/lang-python';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { getExerciseById } from '../lib/exercises';
 
 export default function Exercise() {
@@ -148,11 +145,13 @@ export default function Exercise() {
                   {/* 代码题 */}
                   {question.type === 'code' && (
                     <div className="border rounded-md overflow-hidden">
-                      <CodeMirror
+                      <textarea
                         value={answers[question.id] || ''}
-                        onChange={submitted ? undefined : (value) => handleAnswerChange(question.id, value)}
-                        extensions={[python(), oneDark]}
-                        className="min-h-[200px]"
+                        onChange={submitted ? undefined : (e) => handleAnswerChange(question.id, e.target.value)}
+                        disabled={submitted}
+                        className="w-full p-3 font-mono text-sm bg-gray-900 text-gray-100 min-h-[200px] resize-none focus:outline-none"
+                        spellCheck={false}
+                        placeholder="请输入代码..."
                       />
                     </div>
                   )}
