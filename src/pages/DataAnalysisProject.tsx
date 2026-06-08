@@ -10,6 +10,7 @@ export const DataAnalysisProject: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [executionResult, setExecutionResult] = useState<any>(null);
   const [showSolution, setShowSolution] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   const { runPython } = usePyodide();
 
   const project = dataAnalysisProjects.find(p => p.id === projectId);
@@ -19,6 +20,7 @@ export const DataAnalysisProject: React.FC = () => {
   useEffect(() => {
     setExecutionResult(null);
     setShowSolution(false);
+    setShowComparison(false);
   }, [projectId]);
 
   // 处理代码运行
@@ -32,16 +34,7 @@ export const DataAnalysisProject: React.FC = () => {
     });
     
     try {
-      // 如果有 generationCode，先执行它（但不显示输出）
-      let codeToRun = userCode;
-      if (project?.dataset?.generationCode) {
-        // 执行 generationCode 生成数据，但不输出
-        await runPython(project.dataset.generationCode);
-        // 只执行用户代码，显示输出
-        codeToRun = userCode;
-      }
-      
-      const result = await runPython(codeToRun);
+      const result = await runPython(userCode);
       setExecutionResult(result);
     } catch (error) {
       setExecutionResult({
@@ -52,12 +45,13 @@ export const DataAnalysisProject: React.FC = () => {
         images: []
       });
     }
-  }, [runPython, project]);
+  }, [runPython]);
 
   // 处理重置
   const handleReset = useCallback(() => {
     setExecutionResult(null);
     setShowSolution(false);
+    setShowComparison(false);
   }, []);
 
   if (!project) {
@@ -107,6 +101,17 @@ export const DataAnalysisProject: React.FC = () => {
       case 'expert': return '专家';
       default: return difficulty;
     }
+  };
+
+  // 格式化代码显示（添加行号）
+  const formatCodeWithLineNumbers = (code: string) => {
+    const lines = code.split('\n');
+    const maxLineNumWidth = String(lines.length).length;
+    
+    return lines.map((line, index) => {
+      const lineNum = String(index + 1).padStart(maxLineNumWidth, ' ');
+      return `${lineNum} | ${line}`;
+    }).join('\n');
   };
 
   return (
@@ -168,7 +173,7 @@ export const DataAnalysisProject: React.FC = () => {
                 {totalTasks > 0 && (
                   <span className="text-gray-500 text-sm flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                     {completedTasks}/{totalTasks} 任务
                   </span>
@@ -245,36 +250,90 @@ export const DataAnalysisProject: React.FC = () => {
         </div>
 
         {/* 编辑器和结果区域 */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-6" style={{ minHeight: '500px' }}>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-            <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-              <h3 className="font-medium text-white flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                </svg>
-                Python 编辑器
-              </h3>
+        <div className="mb-6">
+          {/* 控制按钮 */}
+          <div className="bg-white rounded-t-xl shadow-sm border-b p-3">
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setShowSolution(!showSolution)}
-                className="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+                onClick={() => setShowSolution(false)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  !showSolution ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                {showSolution ? '隐藏参考答案' : '查看参考答案'}
+                练习模式
+              </button>
+              <button
+                onClick={() => setShowSolution(true)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  showSolution ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                查看答案
+              </button>
+              <button
+                onClick={() => setShowComparison(!showComparison)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  showComparison ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                对比答案
               </button>
             </div>
-            <div className="flex-1 min-h-0">
+          </div>
+
+          {/* 编辑器区域 */}
+          <div className="grid lg:grid-cols-2 gap-4 bg-white rounded-b-xl shadow-sm">
+            {/* 左侧：用户编辑器 */}
+            <div className="border-r">
+              <div className="bg-gray-800 px-4 py-2 text-white text-sm font-medium flex items-center gap-2">
+                <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 2l6 4v12l-6 4-6-4V6l6-4z"/>
+                </svg>
+                您的代码
+              </div>
               <PythonEditor
                 initialCode={showSolution ? project.solutionCode : project.starterCode}
                 onRun={handleRunCode}
                 onReset={handleReset}
               />
             </div>
+
+            {/* 右侧：参考答案对比 */}
+            {showComparison && (
+              <div>
+                <div className="bg-blue-800 px-4 py-2 text-white text-sm font-medium flex items-center gap-2">
+                  <svg className="w-4 h-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2l7 3.5v9L10 18l-7-3.5v-9L10 2z"/>
+                  </svg>
+                  参考答案
+                </div>
+                <div className="flex flex-col h-[400px] bg-gray-900 rounded-br-xl overflow-hidden">
+                  <div className="flex flex-1 overflow-hidden">
+                    {/* 行号 */}
+                    <div className="flex-none bg-gray-800 text-gray-500 font-mono text-sm select-none text-right border-r border-gray-700 overflow-auto">
+                      <div className="py-4 px-2 space-y-0.5">
+                        {project.solutionCode.split('\n').map((_, i) => (
+                          <div key={i} className="leading-6">
+                            {String(i + 1).padStart(2, ' ')}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* 代码内容 */}
+                    <div className="flex-1 overflow-auto">
+                      <pre className="p-4 font-mono text-sm text-gray-200 leading-6 whitespace-pre-wrap">
+                        {project.solutionCode}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-            <div className="bg-gray-50 px-4 py-3 border-b">
+          {/* 执行结果 */}
+          <div className="mt-4 bg-white rounded-xl shadow-sm">
+            <div className="bg-gray-50 px-4 py-3 border-b rounded-t-xl">
               <h3 className="font-medium text-gray-800 flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -282,7 +341,7 @@ export const DataAnalysisProject: React.FC = () => {
                 执行结果
               </h3>
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="p-4">
               <AnalysisResult result={executionResult} tabs={project.resultTabs} />
             </div>
           </div>
@@ -294,12 +353,12 @@ export const DataAnalysisProject: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-800 text-lg flex items-center gap-2">
                 <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                 </svg>
                 练习任务
               </h3>
               <span className="text-sm text-gray-500">
-                {completedTasks} / {totalTasks} 已完成
+                {completedTasks}/{totalTasks} 已完成
               </span>
             </div>
             <div className="space-y-3">

@@ -14,6 +14,7 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({
   isExecuting = false 
 }) => {
   const [code, setCode] = useState(initialCode);
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
 
   useEffect(() => {
     setCode(initialCode);
@@ -33,6 +34,10 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code);
   }, [code]);
+
+  // 计算代码行数
+  const lines = code.split('\n');
+  const maxLineNumberWidth = Math.max(String(lines.length).length, 2);
 
   return (
     <div className="flex flex-col h-full bg-gray-100 rounded-lg overflow-hidden shadow-lg">
@@ -74,16 +79,43 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({
           </svg>
           复制
         </button>
+        <button
+          onClick={() => setShowLineNumbers(!showLineNumbers)}
+          className="px-4 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-medium transition-all"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+          </svg>
+          {showLineNumbers ? '隐藏行号' : '显示行号'}
+        </button>
         <div className="ml-auto text-gray-400 text-xs px-2">
           Python 3
         </div>
       </div>
-      <textarea
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        className="flex-1 w-full p-4 font-mono text-sm bg-gray-900 text-gray-100 resize-none focus:outline-none"
-        spellCheck={false}
-      />
+      
+      <div className="flex flex-1 overflow-hidden">
+        {/* 行号区域 */}
+        {showLineNumbers && (
+          <div className="flex-none bg-gray-800 text-gray-500 font-mono text-sm select-none text-right border-r border-gray-700 overflow-hidden">
+            <div className="py-4 px-2 space-y-0.5">
+              {lines.map((_, i) => (
+                <div key={i} className="leading-6">
+                  {String(i + 1).padStart(maxLineNumberWidth, ' ')}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* 代码编辑区域 */}
+        <textarea
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="flex-1 p-4 font-mono text-sm bg-gray-900 text-gray-100 resize-none focus:outline-none leading-6"
+          spellCheck={false}
+          placeholder="// 在这里编写代码..."
+        />
+      </div>
     </div>
   );
 };
