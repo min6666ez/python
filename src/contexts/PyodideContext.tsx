@@ -20,7 +20,7 @@ interface PyodideContextType {
 
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
-// 语法错误检查
+// 语法错误检查 - 只检查明显的语法错误
 const checkSyntaxErrors = (code: string): string[] => {
   const errors: string[] = [];
   const lines = code.split('\n');
@@ -31,24 +31,25 @@ const checkSyntaxErrors = (code: string): string[] => {
     const lineNumber = i + 1;
     
     // 跳过注释、空行和导入
-    if (trimmedLine.startsWith('#') || trimmedLine === '' || trimmedLine.startsWith('import ') || trimmedLine.startsWith('from ')) {
+    if (trimmedLine.startsWith('#') || trimmedLine === '') {
+      continue;
+    }
+    if (trimmedLine.startsWith('import ') || trimmedLine.startsWith('from ')) {
       continue;
     }
     
     // 检查 if/for/while/def/class 后缺少冒号
-    if (/^(if|for|while|def|class|elif|else|except)\s+.+[^:\s]$/.test(trimmedLine)) {
-      errors.push(`第 ${lineNumber} 行: ${trimmedLine.split(' ')[0]} 语句后缺少冒号 ':'`);
+    if (/^(if|for|while|def|class)\s+.+[^:\s]$/.test(trimmedLine)) {
+      // 但排除 elif 和 else（它们单独一行时不需要检查冒号）
+      if (!trimmedLine.startsWith('elif') && !trimmedLine.startsWith('else') && !trimmedLine.startsWith('except')) {
+        errors.push(`第 ${lineNumber} 行: ${trimmedLine.split(' ')[0]} 语句后缺少冒号 ':'`);
+      }
     }
     
-    // 检查字符串引号是否闭合
-    const singleQuotes = (line.match(/'/g) || []).length - (line.match(/^[^']*'/g) || []).length;
-    const doubleQuotes = (line.match(/"/g) || []).length;
-    
-    // 简化检查：跳过 f-string
-    if (!trimmedLine.includes('f"') && !trimmedLine.includes("f'")) {
-      if ((singleQuotes % 2 !== 0) && !trimmedLine.includes("print")) {
-        errors.push(`第 ${lineNumber} 行: 单引号未闭合`);
-      }
+    // 只在单引号明显不匹配时报错（简化检查）
+    // 跳过 f-string 内的引号
+    if (trimmedLine.includes('f"') || trimmedLine.includes("f'")) {
+      continue;
     }
     
     // 检查括号匹配
@@ -56,27 +57,6 @@ const checkSyntaxErrors = (code: string): string[] => {
     const closeParens = (trimmedLine.match(/\)/g) || []).length;
     if (openParens !== closeParens) {
       errors.push(`第 ${lineNumber} 行: 括号不匹配 (${openParens}个开, ${closeParens}个闭)`);
-    }
-    
-    // 检查中括号匹配
-    const openBrackets = (trimmedLine.match(/\[/g) || []).length;
-    const closeBrackets = (trimmedLine.match(/\]/g) || []).length;
-    if (openBrackets !== closeBrackets) {
-      errors.push(`第 ${lineNumber} 行: 中括号不匹配`);
-    }
-    
-    // 检查常见拼写错误
-    const misspellings: { [key: string]: string } = {
-      'prnt': 'print', 'printt': 'print',
-      'forr': 'for', 'whlie': 'while',
-      'retun': 'return', 'defi': 'def',
-      'classs': 'class', 'tru': 'True'
-    };
-    
-    for (const [wrong, correct] of Object.entries(misspellings)) {
-      if (trimmedLine.includes(wrong)) {
-        errors.push(`第 ${lineNumber} 行: 疑似拼写错误 '${wrong}'，是否为 '${correct}'？`);
-      }
     }
   }
   
@@ -105,8 +85,12 @@ const executePythonMock = (code: string): ExecutionResult => {
       if (match) {
         let content = match[1].trim();
         if (content.startsWith('f"') || content.startsWith("f'")) {
-          content = content.replace(/^f["']|["']$/g, '').replace(/\{[^}]+\}/g, '[值]');
+          // f-string - 提取引号内容
+          content = content.replace(/^f["']|["']$/g, '');
+          // 替换变量为模拟值
+          content = content.replace(/\{[^}]+\}/g, '[值]');
         } else {
+          // 普通字符串
           content = content.replace(/^["']|["']$/g, '');
         }
         outputs.push(content);
@@ -114,36 +98,75 @@ const executePythonMock = (code: string): ExecutionResult => {
       continue;
     }
 
-    // 模拟各种操作
-    if (trimmedLine.includes('df.info()')) {
-      outputs.push('RangeIndex: 1000 entries\nData columns: 7\n...');
+    // 模拟 df.info()
+    if (trimmedLine === 'df.info()' || trimmedLine.endsWith('.info()')) {
+      outputs.push('RangeIndex: 1000 entries\nData columns: 7 columns');
       continue;
     }
-    if (trimmedLine.includes('df.describe()')) {
+
+    // 模拟 df.describe()
+    if (trimmedLine === 'df.describe()' || trimmedLine.endsWith('.describe()')) {
       outputs.push('         quantity    price\nmean      5.45      27.50');
       continue;
     }
-    if (trimmedLine.includes('df.head()')) {
+
+    // 模拟 df.head()
+    if (trimmedLine === 'df.head()' || trimmedLine.endsWith('.head()')) {
       outputs.push('0  ORD-001  牛奶   3  12.5');
+      outputs.push('1  ORD-002  面包   2   8.0');
       continue;
     }
+
+    // 模拟 df.dtypes
+    if (trimmedLine === 'df.dtypes' || trimmedLine.endsWith('.dtypes')) {
+      outputs.push('order_id              object\nquantity             int64\ndtype: object');
+      continue;
+    }
+
+    // 模拟 isnull().sum()
+    if (trimmedLine.includes('isnull().sum()')) {
+      outputs.push('customer_id    50\norder_id       0\ndtype: int64');
+      continue;
+    }
+
+    // 模拟 drop_duplicates
     if (trimmedLine.includes('drop_duplicates')) {
-      dataState.rowCount -= 50;
+      dataState.rowCount -= dataState.nullCount;
       outputs.push(`去重后: ${dataState.rowCount} 行`);
       continue;
     }
+
+    // 模拟 fillna
     if (trimmedLine.includes('fillna')) {
       outputs.push('缺失值已填充');
       continue;
     }
+
+    // 模拟 to_datetime
+    if (trimmedLine.includes('to_datetime')) {
+      outputs.push('日期类型转换完成');
+      continue;
+    }
+
+    // 模拟 .abs()
+    if (trimmedLine.includes('.abs()')) {
+      outputs.push('负数已转为正数');
+      continue;
+    }
+
+    // 模拟 plt.show()
     if (trimmedLine.includes('plt.show()')) {
       outputs.push('图表已生成');
       continue;
     }
+
+    // 模拟 KMeans
     if (trimmedLine.includes('KMeans') || trimmedLine.includes('kmeans')) {
       outputs.push('K-Means 聚类完成');
       continue;
     }
+
+    // 模拟 apriori
     if (trimmedLine.includes('apriori')) {
       outputs.push('Apriori 算法完成');
       continue;
@@ -171,7 +194,7 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const runPython = async (code: string): Promise<ExecutionResult> => {
     try {
-      // 先检查语法错误
+      // 只检查最明显的语法错误
       const syntaxErrors = checkSyntaxErrors(code);
       if (syntaxErrors.length > 0) {
         return {
