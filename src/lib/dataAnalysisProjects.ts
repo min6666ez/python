@@ -695,107 +695,25 @@ print("\n数据信息:")
 print(df.info())
 `
     },
-    starterCode: `import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+    starterCode: `# 时序销售预测特征构建
+print("=== 数据预览 ===")
+print(df.head())
 
-# 1. 加载数据（在实际环境中，这里会使用生成的df）
-print("=== 数据基本信息 ===")
-df.info()
+# 练习1: 时间特征提取
+print("\n=== 练习1 ===")
+# 提取 day_of_week, is_weekend
 
-# 2. 时间序列可视化
-print("\n=== 时间序列可视化 ===")
-plt.figure(figsize=(12, 6))
-plt.plot(df['date'], df['total_sales'])
-plt.title('每日销售额趋势')
-plt.xlabel('日期')
-plt.ylabel('销售额')
-plt.grid(True, alpha=0.3)
-plt.show()
+# 练习2: 滞后特征
+print("\n=== 练习2 ===")
+# 使用 shift() 创建 lag_1, lag_7, lag_30
 
-# 3. 时间特征提取
-print("\n=== 时间特征提取 ===")
-df['day_of_week'] = df['date'].dt.dayofweek
-df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
-df['day_of_month'] = df['date'].dt.day
-df['week_of_month'] = (df['day_of_month'] - 1) // 7 + 1
+# 练习3: 滚动窗口统计
+print("\n=== 练习3 ===")
+# 计算7天滚动均值和标准差
 
-# 4. 滞后特征
-print("\n=== 滞后特征 ===")
-# 1天滞后
-df['lag_1'] = df['total_sales'].shift(1)
-# 7天滞后（周周期）
-df['lag_7'] = df['total_sales'].shift(7)
-# 30天滞后（月周期）
-df['lag_30'] = df['total_sales'].shift(30)
-
-# 5. 滚动窗口特征
-print("\n=== 滚动窗口特征 ===")
-# 7天滚动均值
-df['rolling_mean_7'] = df['total_sales'].rolling(window=7).mean()
-# 7天滚动标准差
-df['rolling_std_7'] = df['total_sales'].rolling(window=7).std()
-# 30天滚动均值
-df['rolling_mean_30'] = df['total_sales'].rolling(window=30).mean()
-
-# 6. 差分特征
-print("\n=== 差分特征 ===")
-# 一阶差分（消除趋势）
-df['diff_1'] = df['total_sales'].diff(1)
-# 7阶差分（消除周季节性）
-df['diff_7'] = df['total_sales'].diff(7)
-
-# 7. 统计特征
-print("\n=== 统计特征 ===")
-# 计算移动平均与当前值的比率
-df['sales_to_7day_avg'] = df['total_sales'] / df['rolling_mean_7']
-df['sales_to_30day_avg'] = df['total_sales'] / df['rolling_mean_30']
-
-# 8. 特征相关性分析
-print("\n=== 特征相关性分析 ===")
-corr_matrix = df.corr()
-print("销售额与各特征的相关性:")
-print(corr_matrix['total_sales'].sort_values(ascending=False))
-
-# 9. 数据可视化
-print("\n=== 数据可视化 ===")
-# 星期几销售额分布
-plt.figure(figsize=(10, 6))
-df.groupby('day_of_week')['total_sales'].mean().plot(kind='bar')
-plt.title('星期几平均销售额')
-plt.xlabel('星期几')
-plt.ylabel('平均销售额')
-plt.xticks(range(7), ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-plt.show()
-
-# 滞后特征散点图
-plt.figure(figsize=(10, 6))
-plt.scatter(df['lag_1'], df['total_sales'])
-plt.title('滞后1天 vs 当前销售额')
-plt.xlabel('滞后1天销售额')
-plt.ylabel('当前销售额')
-plt.grid(True, alpha=0.3)
-plt.show()
-
-# 滚动均值对比
-plt.figure(figsize=(12, 6))
-plt.plot(df['date'], df['total_sales'], label='原始销售额')
-plt.plot(df['date'], df['rolling_mean_7'], label='7天滚动均值')
-plt.plot(df['date'], df['rolling_mean_30'], label='30天滚动均值')
-plt.title('销售额与滚动均值对比')
-plt.xlabel('日期')
-plt.ylabel('销售额')
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
-
-print("\n特征工程完成！")
-print(f"生成的特征包括：")
-print("1. 时间特征：day_of_week, is_weekend, day_of_month, week_of_month")
-print("2. 滞后特征：lag_1, lag_7, lag_30")
-print("3. 滚动窗口特征：rolling_mean_7, rolling_std_7, rolling_mean_30")
-print("4. 差分特征：diff_1, diff_7")
-print("5. 统计特征：sales_to_7day_avg, sales_to_30day_avg")
+# 练习4: 差分特征
+print("\n=== 练习4 ===")
+# 使用 diff() 创建 diff_1, diff_7
 `,
     solutionCode: `import pandas as pd
 import numpy as np
@@ -1301,19 +1219,22 @@ print("3. 蔬菜和肉品可以作为套餐推荐")
     prerequisites: ['Pandas 基础'],
     estimatedTime: 60,
     dataset: { name: '大规模交易数据', description: '模拟5000笔交易', generationCode: 'import pandas as pd\nimport random\nrandom.seed(42)\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\']\ntransactions = []\nfor i in range(5000):\n    n = random.randint(2,5)\n    transactions.append(random.sample(products, n))\ndf = pd.DataFrame({\'Transaction\': range(1,5001), \'Item\': transactions})\nprint(f"生成 {len(transactions)} 笔交易")' },
-    starterCode: `import pandas as pd
-import numpy as np
-print("=== 分块处理演示 ===")
-# 分块读取
-df_chunked = np.array_split(df, 5)
-print(f"分成 {len(df_chunked)} 个块")
-# 增量统计
-item_counts = {}
-for chunk in df_chunked:
-    for items in chunk['Item']:
-        for item in items:
-            item_counts[item] = item_counts.get(item, 0) + 1
-print("商品统计:", item_counts)`,
+    starterCode: `# 大规模购物篮分块处理
+print("=== 数据预览 ===")
+print(f"交易总数: {len(df)}")
+
+# 练习1: 分块读取
+print("\n=== 练习1 ===")
+# 将数据分成5个块处理
+
+# 练习2: 增量统计
+print("\n=== 练习2 ===")
+# 增量计算每个商品的购买次数
+
+# 练习3: 内存优化
+print("\n=== 练习3 ===")
+# 使用更高效的数据类型
+`,
     solutionCode: `import pandas as pd
 import numpy as np
 print("=== 分块处理 ===")
@@ -1346,18 +1267,22 @@ print("最终统计:", sorted(item_counts.items(), key=lambda x: x[1], reverse=T
     prerequisites: ['Pandas', 'Scikit-learn'],
     estimatedTime: 75,
     dataset: { name: '用户交易数据', description: '200个用户1年数据', generationCode: 'import pandas as pd\nimport numpy as np\nfrom datetime import datetime, timedelta\nnp.random.seed(42)\nn_users = 200\nuser_ids = [f"U_{i:03d}" for i in range(1,n_users+1)]\ntransactions = []\nfor user in user_ids:\n    n_orders = np.random.randint(1,50)\n    for _ in range(n_orders):\n        date = datetime(2024,1,1) + timedelta(days=np.random.randint(0,365))\n        amount = np.random.uniform(50,2000)\n        transactions.append({\'user_id\': user, \'order_date\': date, \'order_amount\': amount})\ndf = pd.DataFrame(transactions)\nprint(f"生成 {len(df)} 条交易记录")' },
-    starterCode: `import pandas as pd
-import numpy as np
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-print("=== RFM计算 ===")
-now = df['order_date'].max() + timedelta(days=1)
-rfm = df.groupby('user_id').agg(
-    Recency=('order_date', lambda x: (now - x.max()).days),
-    Frequency=('order_date', 'count'),
-    Monetary=('order_amount', 'sum')
-).reset_index()
-print("RFM前5行:", rfm.head())`,
+    starterCode: `# RFM用户价值分群
+print("=== 数据预览 ===")
+print(df.head())
+
+# 练习1: 计算RFM
+print("\n=== 练习1 ===")
+# 按 user_id 计算 Recency, Frequency, Monetary
+
+# 练习2: 特征标准化
+print("\n=== 练习2 ===")
+# 使用 StandardScaler 标准化RFM
+
+# 练习3: K-Means聚类
+print("\n=== 练习3 ===")
+# 使用肘部法则确定k值，进行聚类
+`,
     solutionCode: `import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1403,18 +1328,26 @@ print("聚类结果:", rfm.groupby('Cluster').mean())`,
     prerequisites: ['Pandas', 'Scikit-learn'],
     estimatedTime: 60,
     dataset: { name: '商品特征数据', description: '20种商品的特征', generationCode: 'import pandas as pd\nimport numpy as np\nnp.random.seed(42)\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\',\'尿布\',\'啤酒\',\'洗发水\',\'牙膏\',\'卫生纸\',\'洗涤剂\',\'咖啡\',\'茶\',\'糖果\',\'巧克力\']\ndf = pd.DataFrame({\n    \'Product\': products,\n    \'Price\': np.random.uniform(5,200,20),\n    \'Sales\': np.random.randint(100,5000,20),\n    \'UniqueUsers\': np.random.randint(50,2000,20),\n    \'ReturnRate\': np.random.uniform(0.01,0.2,20)\n})\nprint("商品数据:", df)' },
-    starterCode: `import pandas as pd
-import numpy as np
-from scipy.cluster.hierarchy import linkage, dendrogram
-import matplotlib.pyplot as plt
-print("=== 层次聚类 ===")
-X = df[['Price','Sales','UniqueUsers','ReturnRate']]
-Z = linkage(X, method='ward')
-plt.figure(figsize=(12,6))
-dendrogram(Z, labels=df['Product'].values, leaf_rotation=90)
-plt.title('商品层次聚类树状图')
-plt.tight_layout()
-plt.show()`,
+    starterCode: `# 层次聚类与商品推荐
+print("=== 数据预览 ===")
+print(df.head())
+
+# 练习1: 构建特征向量
+print("\n=== 练习1 ===")
+# 提取 Price, Sales, UniqueUsers, ReturnRate
+
+# 练习2: 层次聚类
+print("\n=== 练习2 ===")
+# 使用 linkage() 进行层次聚类
+
+# 练习3: 绘制树状图
+print("\n=== 练习3 ===")
+# 使用 dendrogram() 可视化
+
+# 练习4: 商品推荐
+print("\n=== 练习4 ===")
+# 基于聚类结果推荐相似商品
+`,
     solutionCode: `import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
@@ -1498,22 +1431,26 @@ print("异常样本详情:", df[df['IsAnomaly']].head())`,
     prerequisites: ['聚类', '关联规则'],
     estimatedTime: 90,
     dataset: { name: '综合数据', description: '用户分群和购物篮数据', generationCode: 'import pandas as pd\nimport numpy as np\nimport random\nnp.random.seed(42)\n# 用户分群\nusers = [f"U_{i:03d}" for i in range(1,201)]\nclusters = np.random.randint(0,4,200)\nuser_cluster = pd.DataFrame({\'user_id\': users, \'cluster\': clusters})\n# 购物篮\nproducts = [\'牛奶\',\'面包\',\'鸡蛋\',\'可乐\',\'薯片\',\'饼干\',\'水果\',\'蔬菜\',\'肉品\',\'海鲜\']\ntransactions = []\nfor user in users:\n    n_orders = np.random.randint(1,10)\n    for _ in range(n_orders):\n        n_items = random.randint(2,4)\n        items = random.sample(products, n_items)\n        transactions.append({\'user_id\': user, \'items\': items})\nbaskets = pd.DataFrame(transactions)\nprint("用户数:", len(user_cluster), "交易数:", len(baskets))' },
-    starterCode: `import pandas as pd
-from mlxtend.preprocessing import TransactionEncoder
-from mlxtend.frequent_patterns import apriori, association_rules
-print("=== 分群关联规则 ===")
-# 合并数据
-df_merged = baskets.merge(user_cluster, on='user_id')
-# 按群分析
-for c in range(4):
-    print(f"\\n=== 群 {c} ===")
-    cluster_baskets = df_merged[df_merged['cluster'] == c]['items'].tolist()
-    te = TransactionEncoder()
-    te_ary = te.fit(cluster_baskets).transform(cluster_baskets)
-    df_enc = pd.DataFrame(te_ary, columns=te.columns_)
-    freq = apriori(df_enc, min_support=0.1, use_colnames=True)
-    rules = association_rules(freq, metric="confidence", min_threshold=0.5)
-    print(f"规则数: {len(rules)}")`,
+    starterCode: `# 聚类+关联规则推荐
+print("=== 数据预览 ===")
+print(f"用户数: {len(user_cluster)}, 交易数: {len(baskets)}")
+
+# 练习1: 合并数据
+print("\n=== 练习1 ===")
+# 将用户分群与购物篮数据合并
+
+# 练习2: 分群关联规则
+print("\n=== 练习2 ===")
+# 按 cluster 分组处理
+
+# 练习3: 各群规则挖掘
+print("\n=== 练习3 ===")
+# 对每个群使用 apriori + association_rules
+
+# 练习4: 个性化推荐
+print("\n=== 练习4 ===")
+# 根据用户所属群推荐规则
+`,
     solutionCode: `import pandas as pd
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
@@ -1551,23 +1488,26 @@ print("各群规则数:", {c: len(r) for c, r in cluster_rules.items()})`,
     prerequisites: ['前9个项目'],
     estimatedTime: 120,
     dataset: { name: '完整电商数据', description: '用户、订单、商品数据', generationCode: 'import pandas as pd\nimport numpy as np\nfrom datetime import datetime, timedelta\nnp.random.seed(42)\n# 用户表\nusers = pd.DataFrame({\'user_id\': [f"U_{i:03d}" for i in range(1,201)]})\n# 订单表\norders = []\nfor user in users[\'user_id\']:\n    n = np.random.randint(1,50)\n    for _ in range(n):\n        date = datetime(2024,1,1) + timedelta(days=np.random.randint(0,365))\n        amount = np.random.uniform(50,2000)\n        orders.append({\'user_id\': user, \'order_date\': date, \'amount\': amount})\norders = pd.DataFrame(orders)\nprint("用户数:", len(users), "订单数:", len(orders))' },
-    starterCode: `import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-print("=== 完整分析流程 ===")
-# 1. 数据清洗
-print("数据清洗中...")
-# 2. RFM
-now = orders['order_date'].max() + timedelta(days=1)
-rfm = orders.groupby('user_id').agg(
-    Recency=('order_date', lambda x: (now - x.max()).days),
-    Frequency=('order_date', 'count'),
-    Monetary=('amount', 'sum')
-).reset_index()
-# 3. KPI
-print("总销售额:", orders['amount'].sum())
-print("订单数:", len(orders))
-print("用户数:", orders['user_id'].nunique())`,
+    starterCode: `# 完整用户运营分析看板
+print("=== 数据预览 ===")
+print(f"用户数: {len(users)}, 订单数: {len(orders)}")
+
+# 练习1: 数据清洗
+print("\n=== 练习1 ===")
+# 清洗重复值、缺失值、异常值
+
+# 练习2: KPI计算
+print("\n=== 练习2 ===")
+# 计算总销售额、订单数、客单价
+
+# 练习3: RFM分析
+print("\n=== 练习3 ===")
+# 按用户计算RFM并聚类
+
+# 练习4: 可视化看板
+print("\n=== 练习4 ===")
+# 绘制趋势图、分布图
+`,
     solutionCode: `import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
