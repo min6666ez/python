@@ -32,7 +32,13 @@ export const DataAnalysisProject: React.FC = () => {
     });
     
     try {
-      const result = await runPython(userCode);
+      // 如果有 generationCode，先执行它生成数据
+      let combinedCode = userCode;
+      if (project?.dataset?.generationCode) {
+        combinedCode = project.dataset.generationCode + '\n\n# 用户代码\n' + userCode;
+      }
+      
+      const result = await runPython(combinedCode);
       setExecutionResult(result);
     } catch (error) {
       setExecutionResult({
@@ -43,7 +49,7 @@ export const DataAnalysisProject: React.FC = () => {
         images: []
       });
     }
-  }, [runPython]);
+  }, [runPython, project]);
 
   if (!project) {
     return (
