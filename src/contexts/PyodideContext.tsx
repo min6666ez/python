@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
-// 类型定义
 interface ExecutionResult {
   stdout: string;
   stderr: string;
@@ -15,115 +14,116 @@ interface PyodideContextType {
   loadProgress: number;
   runPython: (code: string) => Promise<ExecutionResult>;
   reset: () => Promise<void>;
+  loadPackage: (packages: string[]) => Promise<void>;
 }
 
-// 创建上下文
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
-// 加载状态组件
 const PyodideLoading: React.FC<{ progress: number }> = ({ progress }) => {
+  const getStatusText = () => {
+    if (progress < 20) return '初始化环境...';
+    if (progress < 40) return '加载 Pyodide 核心...';
+    if (progress < 60) return '加载基础库...';
+    if (progress < 80) return '安装数据分析包...';
+    if (progress < 95) return '配置运行环境...';
+    return '准备完成！';
+  };
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
-      <div className="text-center p-8 rounded-lg shadow-lg max-w-md">
-        <div className="text-2xl font-bold text-primary mb-4">加载 Python 环境</div>
-        <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-white/90 z-50 backdrop-blur-sm">
+      <div className="text-center p-8 rounded-2xl shadow-xl max-w-md mx-4">
+        <div className="text-2xl font-bold text-primary mb-4 flex items-center justify-center gap-3">
+          <span className="animate-pulse">🐍</span>
+          <span>加载 Python 环境</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
           <div 
-            className="bg-secondary h-4 rounded-full transition-all duration-300 ease-out" 
+            className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full transition-all duration-500 ease-out" 
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        <p className="text-gray-600">
-          {progress < 30 ? '下载 Pyodide 核心...' : 
-           progress < 60 ? '加载基础库...' : 
-           progress < 80 ? '安装数据分析包...' : 
-           progress < 95 ? '配置运行环境...' : '准备完成！'}
-        </p>
+        <p className="text-gray-600 text-sm">{getStatusText()}</p>
+        <p className="text-gray-400 text-xs mt-2">({Math.round(progress)}%)</p>
       </div>
     </div>
   );
 };
 
-// 提供者组件
 export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [pyodide, setPyodide] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
 
-  useEffect(() => {
-    const loadPyodide = async () => {
-      try {
-        setLoadProgress(10);
-        // 动态导入 Pyodide
-        const { loadPyodide } = await import('pyodide');
-        setLoadProgress(30);
+  const initializePyodide = useCallback(async () => {
+    try {
+      setLoadProgress(10);
+      
+      const { loadPyodide } = await import('pyodide');
+      setLoadProgress(25);
 
-        const indexURL = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/";
-        const pyodideInstance = await loadPyodide({ 
-          indexURL
-        });
-        setLoadProgress(60);
+      const indexURL = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/";
+      const pyodideInstance = await loadPyodide({ indexURL });
+      setLoadProgress(50);
 
-        // 加载必要的包
-        await pyodideInstance.loadPackage(['pandas', 'matplotlib', 'scikit-learn']);
-        setLoadProgress(80);
+      await pyodideInstance.loadPackage(['pandas', 'matplotlib', 'scikit-learn']);
+      setLoadProgress(75);
 
-        // 安装 mlxtend
-        await pyodideInstance.runPythonAsync(`
-          import micropip
-          await micropip.install('mlxtend')
-        `);
-        setLoadProgress(95);
+      await pyodideInstance.runPythonAsync(`
+        import micropip
+        await micropip.install('mlxtend')
+      `);
+      setLoadProgress(85);
 
-        // 配置 matplotlib 以生成可显示的图表
-        await pyodideInstance.runPythonAsync(`
-          import matplotlib
-          matplotlib.use('Agg')
-          import matplotlib.pyplot as plt
-          import base64
-          import io
-          import sys
+      await pyodideInstance.runPythonAsync(`
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import base64
+        import io
+        import sys
 
-          # 存储生成的图表
-          _generated_images = []
+        _generated_images = []
 
-          def plot_to_base64():
-              buf = io.BytesIO()
-              plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-              buf.seek(0)
-              img_str = base64.b64encode(buf.read()).decode('utf-8')
-              plt.close()
-              return img_str
+        def plot_to_base64():
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            buf.seek(0)
+            img_str = base64.b64encode(buf.read()).decode('utf-8')
+            plt.close('all')
+            return img_str
 
-          def capture_plot():
-              img_str = plot_to_base64()
-              _generated_images.append(img_str)
+        def capture_plot():
+            img_str = plot_to_base64()
+            _generated_images.append(img_str)
 
-          # 将函数添加到全局命名空间
-          sys.modules['__main__'].plot_to_base64 = plot_to_base64
-          sys.modules['__main__'].capture_plot = capture_plot
-          sys.modules['__main__']._generated_images = _generated_images
-        `);
+        sys.modules['__main__'].plot_to_base64 = plot_to_base64
+        sys.modules['__main__'].capture_plot = capture_plot
+        sys.modules['__main__']._generated_images = _generated_images
+      `);
+      setLoadProgress(100);
 
-        setLoadProgress(100);
-        setPyodide(pyodideInstance);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Failed to load Pyodide:', error);
-        setIsLoading(false);
-      }
-    };
-
-    loadPyodide();
-
-    // 清理函数
-    return () => {
-      if (pyodide) {
-        pyodide.destroy();
-      }
-    };
+      setPyodide(pyodideInstance);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to load Pyodide:', error);
+      setIsLoading(false);
+    }
   }, []);
 
-  // 运行 Python 代码
+  useEffect(() => {
+    initializePyodide();
+
+    return () => {
+      if (pyodide) {
+        try {
+          pyodide.destroy();
+        } catch (e) {
+          console.error('Error destroying pyodide:', e);
+        }
+      }
+    };
+  }, [initializePyodide, pyodide]);
+
   const runPython = async (code: string): Promise<ExecutionResult> => {
     if (!pyodide) {
       return {
@@ -135,21 +135,15 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
       };
     }
 
-    // 捕获标准输出
     let stdout = '';
     let stderr = '';
 
     try {
-      // 重定向 stdout 和 stderr
       pyodide.setStdout({ write: (text: string) => { stdout += text; } });
       pyodide.setStderr({ write: (text: string) => { stderr += text; } });
 
-      // 清空之前的图片
-      await pyodide.runPythonAsync(`
-        _generated_images.clear()
-      `);
+      await pyodide.runPythonAsync('_generated_images.clear()');
 
-      // 包装用户代码，自动捕获 plt.show()
       const wrappedCode = `
 import matplotlib.pyplot as plt
 _original_show = plt.show
@@ -162,16 +156,12 @@ plt.show = _capturing_show
 
 ${code}
 
-# 最后检查是否有未显示的图表
 if len(plt.get_fignums()) > 0:
     capture_plot()
     plt.close('all')
 `;
 
-      // 运行代码
       const result = await pyodide.runPythonAsync(wrappedCode);
-
-      // 获取生成的图片
       const images = pyodide.globals.get('_generated_images').toJs();
 
       return {
@@ -192,22 +182,17 @@ if len(plt.get_fignums()) > 0:
     }
   };
 
-  // 重置 Pyodide 状态
   const reset = async (): Promise<void> => {
     if (pyodide) {
       try {
         await pyodide.runPythonAsync(`
           import gc
           gc.collect()
-          # 重置全局变量
           import sys
-          # 保留必要的函数
           keep_vars = {'plot_to_base64', 'capture_plot', '_generated_images'}
           for key in list(sys.modules['__main__'].__dict__.keys()):
-              if not key.startswith('_') or key in keep_vars:
-                  continue
-              del sys.modules['__main__'].__dict__[key]
-          # 清空图片
+              if key.startswith('_') and key not in keep_vars:
+                  del sys.modules['__main__'].__dict__[key]
           _generated_images.clear()
           import matplotlib.pyplot as plt
           plt.close('all')
@@ -218,12 +203,19 @@ if len(plt.get_fignums()) > 0:
     }
   };
 
+  const loadPackage = async (packages: string[]): Promise<void> => {
+    if (pyodide) {
+      await pyodide.loadPackage(packages);
+    }
+  };
+
   const value = {
     pyodide,
     isLoading,
     loadProgress,
     runPython,
-    reset
+    reset,
+    loadPackage
   };
 
   return (
@@ -234,7 +226,6 @@ if len(plt.get_fignums()) > 0:
   );
 };
 
-// 自定义 Hook
 export const usePyodide = (): PyodideContextType => {
   const context = useContext(PyodideContext);
   if (context === undefined) {
