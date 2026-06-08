@@ -18,7 +18,8 @@ import { PythonLinter } from './PythonLinter';
 
 interface PythonEditorProps {
   initialCode: string;
-  onRun: (result: any) => void;
+  onRun: (code: string) => void;
+  isExecuting?: boolean;
 }
 
 const customHighlightStyle = HighlightStyle.define([
@@ -38,14 +39,13 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.bracket, color: '#89ddff' },
 ]);
 
-export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun }) => {
+export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun, isExecuting = false }) => {
   const [code, setCode] = useState(initialCode);
-  const [isRunning, setIsRunning] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [fontSize, setFontSize] = useState(14);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [showWhitespace, setShowWhitespace] = useState(false);
-  const { runPython, isLoading, loadProgress } = usePyodide();
+  const { isLoading, loadProgress } = usePyodide();
 
   const themeCompartment = new Compartment();
 
@@ -53,19 +53,9 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun }
     setCode(initialCode);
   }, [initialCode]);
 
-  const handleRun = useCallback(async () => {
-    if (isLoading) return;
-    
-    setIsRunning(true);
-    try {
-      const result = await runPython(code);
-      onRun(result);
-    } catch (error) {
-      console.error('Error running code:', error);
-    } finally {
-      setIsRunning(false);
-    }
-  }, [isLoading, code, runPython, onRun]);
+  const handleRun = useCallback(() => {
+    onRun(code);
+  }, [code, onRun]);
 
   const handleReset = useCallback(() => {
     setCode(initialCode);
@@ -87,7 +77,7 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun }
     setIsDark(prev => !prev);
   }, []);
 
-  const isDisabled = isLoading || isRunning;
+  const isDisabled = isLoading || isExecuting;
 
   const extensions = [
     lineNumbers({ enabled: showLineNumbers }),
@@ -140,7 +130,7 @@ export const PythonEditor: React.FC<PythonEditorProps> = ({ initialCode, onRun }
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               加载中... {loadProgress}%
             </>
-          ) : isRunning ? (
+          ) : isExecuting ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               运行中...
