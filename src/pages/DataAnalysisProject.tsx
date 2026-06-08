@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataAnalysisProjects } from '../lib/dataAnalysisProjects';
 import { PythonEditor } from '../components/PythonEditor';
@@ -32,13 +32,16 @@ export const DataAnalysisProject: React.FC = () => {
     });
     
     try {
-      // 如果有 generationCode，先执行它生成数据
-      let combinedCode = userCode;
+      // 如果有 generationCode，先执行它（但不显示输出）
+      let codeToRun = userCode;
       if (project?.dataset?.generationCode) {
-        combinedCode = project.dataset.generationCode + '\n\n# 用户代码\n' + userCode;
+        // 执行 generationCode 生成数据，但不输出
+        await runPython(project.dataset.generationCode);
+        // 只执行用户代码，显示输出
+        codeToRun = userCode;
       }
       
-      const result = await runPython(combinedCode);
+      const result = await runPython(codeToRun);
       setExecutionResult(result);
     } catch (error) {
       setExecutionResult({
