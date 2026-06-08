@@ -20,49 +20,82 @@ interface PyodideContextType {
 
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
-// 模拟Python执行器 - 根据用户代码生成合理输出
-const executePythonMock = (code: string): ExecutionResult => {
-  const outputs: string[] = [];
+// 语法错误检查
+const checkSyntaxErrors = (code: string): string[] => {
   const errors: string[] = [];
-  
   const lines = code.split('\n');
-  let inMultiLineString = false;
-  let stringChar = '';
   
-  // 模拟数据状态
-  let dataState = {
-    rowCount: 1000,
-    nullCount: 50,
-    duplicateCount: 50,
-    negativeCount: 30
-  };
-
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmedLine = line.trim();
+    const lineNumber = i + 1;
     
-    // 处理多行字符串
-    if (!inMultiLineString && (trimmedLine.startsWith('"""') || trimmedLine.startsWith("'''"))) {
-      stringChar = trimmedLine.substring(0, 3);
-      if ((trimmedLine.match(/"""/g) || []).length === 1) {
-        inMultiLineString = true;
+    // 跳过注释、空行和导入
+    if (trimmedLine.startsWith('#') || trimmedLine === '' || trimmedLine.startsWith('import ') || trimmedLine.startsWith('from ')) {
+      continue;
+    }
+    
+    // 检查 if/for/while/def/class 后缺少冒号
+    if (/^(if|for|while|def|class|elif|else|except)\s+.+[^:\s]$/.test(trimmedLine)) {
+      errors.push(`第 ${lineNumber} 行: ${trimmedLine.split(' ')[0]} 语句后缺少冒号 ':'`);
+    }
+    
+    // 检查字符串引号是否闭合
+    const singleQuotes = (line.match(/'/g) || []).length - (line.match(/^[^']*'/g) || []).length;
+    const doubleQuotes = (line.match(/"/g) || []).length;
+    
+    // 简化检查：跳过 f-string
+    if (!trimmedLine.includes('f"') && !trimmedLine.includes("f'")) {
+      if ((singleQuotes % 2 !== 0) && !trimmedLine.includes("print")) {
+        errors.push(`第 ${lineNumber} 行: 单引号未闭合`);
       }
-      continue;
     }
-    if (inMultiLineString) {
-      if (trimmedLine.includes(stringChar)) {
-        inMultiLineString = false;
+    
+    // 检查括号匹配
+    const openParens = (trimmedLine.match(/\(/g) || []).length;
+    const closeParens = (trimmedLine.match(/\)/g) || []).length;
+    if (openParens !== closeParens) {
+      errors.push(`第 ${lineNumber} 行: 括号不匹配 (${openParens}个开, ${closeParens}个闭)`);
+    }
+    
+    // 检查中括号匹配
+    const openBrackets = (trimmedLine.match(/\[/g) || []).length;
+    const closeBrackets = (trimmedLine.match(/\]/g) || []).length;
+    if (openBrackets !== closeBrackets) {
+      errors.push(`第 ${lineNumber} 行: 中括号不匹配`);
+    }
+    
+    // 检查常见拼写错误
+    const misspellings: { [key: string]: string } = {
+      'prnt': 'print', 'printt': 'print',
+      'forr': 'for', 'whlie': 'while',
+      'retun': 'return', 'defi': 'def',
+      'classs': 'class', 'tru': 'True'
+    };
+    
+    for (const [wrong, correct] of Object.entries(misspellings)) {
+      if (trimmedLine.includes(wrong)) {
+        errors.push(`第 ${lineNumber} 行: 疑似拼写错误 '${wrong}'，是否为 '${correct}'？`);
       }
-      continue;
     }
+  }
+  
+  return errors;
+};
+
+// 模拟Python执行器
+const executePythonMock = (code: string): ExecutionResult => {
+  const outputs: string[] = [];
+  const lines = code.split('\n');
+  
+  // 模拟数据状态
+  let dataState = { rowCount: 1000, nullCount: 50 };
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
     
-    // 跳过注释和空行
-    if (trimmedLine.startsWith('#') || trimmedLine === '') {
-      continue;
-    }
-    
-    // 跳过导入语句
-    if (trimmedLine.startsWith('import ') || trimmedLine.startsWith('from ')) {
+    // 跳过注释、空行和导入
+    if (trimmedLine.startsWith('#') || trimmedLine === '' || trimmedLine.startsWith('import ') || trimmedLine.startsWith('from ')) {
       continue;
     }
 
@@ -71,218 +104,57 @@ const executePythonMock = (code: string): ExecutionResult => {
       const match = trimmedLine.match(/print\((.*)\)\s*$/);
       if (match) {
         let content = match[1].trim();
-        
-        // 处理 f-string
         if (content.startsWith('f"') || content.startsWith("f'")) {
-          // 模拟 f-string 结果
-          content = content.replace(/^f["']|["']$/g, '');
-          // 替换变量引用为模拟值
-          content = content.replace(/\{[^}]+\}/g, '[值]');
+          content = content.replace(/^f["']|["']$/g, '').replace(/\{[^}]+\}/g, '[值]');
         } else {
-          // 普通字符串
           content = content.replace(/^["']|["']$/g, '');
         }
-        
         outputs.push(content);
       }
       continue;
     }
 
-    // 模拟 df.info()
-    if (trimmedLine.includes('df.info()') || trimmedLine === 'df.info()') {
-      outputs.push('RangeIndex: 1000 entries, 0 to 999');
-      outputs.push('Data columns (total 7 columns):');
-      outputs.push(' #   Column        Non-Null Count  Dtype');
-      outputs.push('---  ------        --------------  -----');
-      outputs.push(' 0   order_id      1000 non-null   object');
-      outputs.push(' 1   customer_id   950 non-null    object');
-      outputs.push(' 2   product_name  1000 non-null   object');
-      outputs.push(' 3   quantity      1000 non-null   int64');
-      outputs.push('dtypes: datetime64[ns](1), float64(2), int64(1), object(3)');
+    // 模拟各种操作
+    if (trimmedLine.includes('df.info()')) {
+      outputs.push('RangeIndex: 1000 entries\nData columns: 7\n...');
       continue;
     }
-
-    // 模拟 df.describe()
     if (trimmedLine.includes('df.describe()')) {
-      outputs.push('         quantity    unit_price  total_amount');
-      outputs.push('count  1000.000000  1000.000000   1000.000000');
-      outputs.push('mean      5.450000    27.500000    149.975000');
-      outputs.push('std       2.872281    12.987008    125.340000');
-      outputs.push('min       1.000000     5.000000      5.000000');
-      outputs.push('max      10.000000    50.000000    500.000000');
+      outputs.push('         quantity    price\nmean      5.45      27.50');
       continue;
     }
-
-    // 模拟 df.head()
     if (trimmedLine.includes('df.head()')) {
-      outputs.push('  order_id customer_id product_name  quantity  unit_price');
-      outputs.push('0  ORD-0001     CUST-001         牛奶         3        12.5');
-      outputs.push('1  ORD-0002     CUST-002         面包         2         8.0');
-      outputs.push('2  ORD-0003     CUST-003         鸡蛋         1        15.0');
+      outputs.push('0  ORD-001  牛奶   3  12.5');
       continue;
     }
-
-    // 模拟 df.dtypes
-    if (trimmedLine.includes('df.dtypes')) {
-      outputs.push('order_id              object');
-      outputs.push('customer_id         object');
-      outputs.push('quantity             int64');
-      outputs.push('dtype: object');
-      continue;
-    }
-
-    // 模拟 df.isnull().sum()
-    if (trimmedLine.includes('isnull().sum()')) {
-      outputs.push('order_id        0');
-      outputs.push('customer_id    50');
-      outputs.push('product_name    0');
-      outputs.push('quantity        0');
-      continue;
-    }
-
-    // 模拟 df.drop_duplicates()
     if (trimmedLine.includes('drop_duplicates')) {
-      dataState.rowCount -= dataState.duplicateCount;
-      outputs.push(`去重后数据形状: (${dataState.rowCount}, 7)`);
+      dataState.rowCount -= 50;
+      outputs.push(`去重后: ${dataState.rowCount} 行`);
       continue;
     }
-
-    // 模拟 df.fillna
     if (trimmedLine.includes('fillna')) {
-      dataState.nullCount = 0;
       outputs.push('缺失值已填充');
       continue;
     }
-
-    // 模拟 df.abs()
-    if (trimmedLine.includes('.abs()')) {
-      dataState.negativeCount = 0;
-      outputs.push('负数已转为正数');
-      continue;
-    }
-
-    // 模拟 plt.show()
     if (trimmedLine.includes('plt.show()')) {
       outputs.push('图表已生成');
       continue;
     }
-
-    // 模拟 plt.figure
-    if (trimmedLine.includes('plt.figure')) {
-      outputs.push('图表已开始绘制');
-      continue;
-    }
-
-    // 模拟 plt.plot
-    if (trimmedLine.includes('plt.plot')) {
-      outputs.push('数据已绑定到图表');
-      continue;
-    }
-
-    // 模拟 plt.bar
-    if (trimmedLine.includes('plt.bar')) {
-      outputs.push('柱状图数据已绑定');
-      continue;
-    }
-
-    // 模拟 plt.title
-    if (trimmedLine.includes('plt.title')) {
-      // 提取标题内容
-      const titleMatch = trimmedLine.match(/plt\.title\(["'](.+?)["']\)/);
-      if (titleMatch) {
-        outputs.push(`图表标题: ${titleMatch[1]}`);
-      }
-      continue;
-    }
-
-    // 模拟 pd.to_datetime
-    if (trimmedLine.includes('to_datetime')) {
-      outputs.push('日期类型转换完成');
-      continue;
-    }
-
-    // 模拟 quantile
-    if (trimmedLine.includes('quantile')) {
-      outputs.push('分位数计算完成');
-      continue;
-    }
-
-    // 模拟 groupby
-    if (trimmedLine.includes('groupby')) {
-      outputs.push('分组完成');
-      continue;
-    }
-
-    // 模拟 merge
-    if (trimmedLine.includes('merge')) {
-      outputs.push('数据合并完成');
-      continue;
-    }
-
-    // 模拟 KMeans
     if (trimmedLine.includes('KMeans') || trimmedLine.includes('kmeans')) {
       outputs.push('K-Means 聚类完成');
-      outputs.push('聚类数量: 4');
       continue;
     }
-
-    // 模拟 DBSCAN
-    if (trimmedLine.includes('DBSCAN') || trimmedLine.includes('dbscan')) {
-      outputs.push('DBSCAN 聚类完成');
-      outputs.push('发现 23 个异常点');
-      continue;
-    }
-
-    // 模拟 apriori
     if (trimmedLine.includes('apriori')) {
       outputs.push('Apriori 算法完成');
-      outputs.push('找到 25 个频繁项集');
-      continue;
-    }
-
-    // 模拟 fcluster
-    if (trimmedLine.includes('fcluster')) {
-      outputs.push('层次聚类完成');
-      continue;
-    }
-
-    // 模拟 linkage
-    if (trimmedLine.includes('linkage')) {
-      outputs.push('距离矩阵计算完成');
-      continue;
-    }
-
-    // 模拟 StandardScaler
-    if (trimmedLine.includes('StandardScaler') || trimmedLine.includes('fit_transform')) {
-      outputs.push('数据标准化完成');
-      continue;
-    }
-
-    // 模拟 sort_values
-    if (trimmedLine.includes('sort_values')) {
-      outputs.push('数据排序完成');
-      continue;
-    }
-
-    // 模拟 value_counts
-    if (trimmedLine.includes('value_counts')) {
-      outputs.push('值计数完成');
       continue;
     }
   }
 
-  // 如果没有任何输出，提示用户
   if (outputs.length === 0) {
     outputs.push('代码执行完成（无输出）');
   }
 
-  return {
-    stdout: outputs.join('\n'),
-    stderr: errors.length > 0 ? errors.join('\n') : '',
-    result: null,
-    error: errors.length > 0,
-    images: []
-  };
+  return { stdout: outputs.join('\n'), stderr: '', result: null, error: false, images: [] };
 };
 
 export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -299,6 +171,18 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const runPython = async (code: string): Promise<ExecutionResult> => {
     try {
+      // 先检查语法错误
+      const syntaxErrors = checkSyntaxErrors(code);
+      if (syntaxErrors.length > 0) {
+        return {
+          stdout: '',
+          stderr: '语法错误:\n' + syntaxErrors.join('\n'),
+          result: null,
+          error: true,
+          images: []
+        };
+      }
+      
       return executePythonMock(code);
     } catch (error) {
       return {
@@ -312,7 +196,6 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const reset = async (): Promise<void> => {};
-
   const loadPackage = async (packages: string[]): Promise<void> => {};
 
   return (
