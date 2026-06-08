@@ -12,6 +12,7 @@ interface PyodideContextType {
   pyodide: any;
   isLoading: boolean;
   loadProgress: number;
+  loadError: string | null;
   runPython: (code: string) => Promise<ExecutionResult>;
   reset: () => Promise<void>;
   loadPackage: (packages: string[]) => Promise<void>;
@@ -19,7 +20,7 @@ interface PyodideContextType {
 
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
-const PyodideLoading: React.FC<{ progress: number }> = ({ progress }) => {
+const PyodideLoading: React.FC<{ progress: number; error: string | null }> = ({ progress, error }) => {
   const getStatusText = () => {
     if (progress < 20) return '初始化环境...';
     if (progress < 40) return '加载 Pyodide 核心...';
@@ -29,16 +30,36 @@ const PyodideLoading: React.FC<{ progress: number }> = ({ progress }) => {
     return '准备完成！';
   };
 
+  if (error) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/90 z-50 backdrop-blur-sm">
+        <div className="text-center p-8 rounded-2xl shadow-xl max-w-md mx-4">
+          <div className="text-2xl font-bold text-red-600 mb-4 flex items-center justify-center gap-3">
+            <span>⚠️</span>
+            <span>Python 环境加载失败</span>
+          </div>
+          <p className="text-gray-600 text-sm mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            重试加载
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-white/90 z-50 backdrop-blur-sm">
       <div className="text-center p-8 rounded-2xl shadow-xl max-w-md mx-4">
-        <div className="text-2xl font-bold text-primary mb-4 flex items-center justify-center gap-3">
+        <div className="text-2xl font-bold text-indigo-600 mb-4 flex items-center justify-center gap-3">
           <span className="animate-pulse">🐍</span>
           <span>加载 Python 环境</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
           <div 
-            className="bg-gradient-to-r from-primary to-secondary h-3 rounded-full transition-all duration-500 ease-out" 
+            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-500 ease-out" 
             style={{ width: `${progress}%` }}
           ></div>
         </div>
@@ -53,6 +74,7 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [pyodide, setPyodide] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const initializePyodide = useCallback(async () => {
     try {
@@ -61,18 +83,13 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
       const { loadPyodide } = await import('pyodide');
       setLoadProgress(25);
 
-      const indexURL = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/";
-      const pyodideInstance = await loadPyodide({ indexURL });
+      const pyodideInstance = await loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/"
+      });
       setLoadProgress(50);
 
       await pyodideInstance.loadPackage(['pandas', 'matplotlib', 'scikit-learn']);
       setLoadProgress(75);
-
-      await pyodideInstance.runPythonAsync(`
-        import micropip
-        await micropip.install('mlxtend')
-      `);
-      setLoadProgress(85);
 
       await pyodideInstance.runPythonAsync(`
         import matplotlib
@@ -104,8 +121,9 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       setPyodide(pyodideInstance);
       setIsLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load Pyodide:', error);
+      setLoadError(error.message || 'Pyodide 加载失败，请刷新页面重试');
       setIsLoading(false);
     }
   }, []);
@@ -128,7 +146,7 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!pyodide) {
       return {
         stdout: '',
-        stderr: 'Pyodide is not loaded yet',
+        stderr: 'Python 环境尚未加载完成，请等待加载完成后再试',
         result: null,
         error: true,
         images: []
@@ -213,6 +231,7 @@ if len(plt.get_fignums()) > 0:
     pyodide,
     isLoading,
     loadProgress,
+    loadError,
     runPython,
     reset,
     loadPackage
@@ -220,7 +239,7 @@ if len(plt.get_fignums()) > 0:
 
   return (
     <PyodideContext.Provider value={value}>
-      {isLoading && <PyodideLoading progress={loadProgress} />}
+      {isLoading && <PyodideLoading progress={loadProgress} error={loadError} />}
       {children}
     </PyodideContext.Provider>
   );
