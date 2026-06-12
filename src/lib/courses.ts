@@ -6,6 +6,7 @@ export interface Course {
   duration: string;
   modules: Module[];
   coverImage: string;
+  rating: number;
   category: 'python' | 'data-analysis' | 'visualization' | 'business-analysis';
 }
 
@@ -31,6 +32,7 @@ export const courses: Course[] = [
     description: '掌握Python编程的基本概念和语法，为数据分析打下坚实基础',
     level: 'beginner',
     duration: '10小时',
+    rating: 4.8,
     category: 'python',
     coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Python%20programming%20basics%20for%20data%20analysis&image_size=landscape_16_9',
     modules: [
@@ -81,6 +83,7 @@ export const courses: Course[] = [
     description: '学习NumPy、Pandas等核心数据分析库的使用',
     level: 'intermediate',
     duration: '15小时',
+    rating: 4.6,
     category: 'data-analysis',
     coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20analysis%20libraries%20NumPy%20and%20Pandas&image_size=landscape_16_9',
     modules: [
@@ -142,6 +145,7 @@ export const courses: Course[] = [
     description: '应用数据分析技能解决实际商务问题',
     level: 'advanced',
     duration: '20小时',
+    rating: 4.9,
     category: 'business-analysis',
     coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Business%20data%20analysis%20dashboard&image_size=landscape_16_9',
     modules: [

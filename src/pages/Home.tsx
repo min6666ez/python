@@ -364,7 +364,7 @@ export default function Home({ user }: HomeProps) {
               >
                 <div className="relative">
                   <img
-                    src={course.image}
+                    src={course.coverImage}
                     alt={course.title}
                     className="w-full h-48 object-cover"
                   />
@@ -440,7 +440,7 @@ export default function Home({ user }: HomeProps) {
                   <div key={course.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center mb-4 md:mb-0">
                       <img
-                        src={course.image}
+                        src={course.coverImage}
                         alt={course.title}
                         className="w-20 h-20 rounded-lg object-cover mr-4"
                       />
