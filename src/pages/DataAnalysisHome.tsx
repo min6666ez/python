@@ -54,6 +54,15 @@ export const DataAnalysisHome: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
+              <Link 
+                to="/" 
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                <span>返回主页</span>
+              </Link>
               <h1 className="text-4xl font-bold mb-4">数据分析实战训练营</h1>
               <p className="text-xl opacity-90 mb-6">
                 10个循序渐进的实战项目，从数据清洗到用户分群，掌握完整的数据分析技能
