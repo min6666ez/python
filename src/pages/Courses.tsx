@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { courses, Course } from '../lib/courses';
+import { Navbar, Footer } from '../components/Navigation';
+import { auth } from '../lib/firebase';
+import { Clock, BookOpen, ChevronRight } from 'lucide-react';
 
 export default function Courses() {
+  const user = auth.currentUser;
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -23,32 +27,10 @@ export default function Courses() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 导航栏 */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="text-xl font-bold text-indigo-600">
-                数据分析学习平台
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/" className="text-sm text-gray-700 hover:text-indigo-600">
-                首页
-              </Link>
-              <Link to="/courses" className="text-sm text-indigo-600 font-medium">
-                课程
-              </Link>
-              <Link to="/profile" className="text-sm text-gray-700 hover:text-indigo-600">
-                个人中心
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar user={user} />
+      
       {/* 主内容 */}
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 pt-24">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">课程体系</h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -65,7 +47,7 @@ export default function Courses() {
                 onClick={() => setSelectedCategory(category.value)}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   selectedCategory === category.value
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -79,7 +61,7 @@ export default function Courses() {
               placeholder="搜索课程..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
         </div>
@@ -92,12 +74,7 @@ export default function Courses() {
         </div>
       </div>
 
-      {/* 页脚 */}
-      <footer className="bg-white border-t border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-          <p>© 2026 数据分析学习平台. 保留所有权利.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
@@ -107,6 +84,8 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course }: CourseCardProps) => {
+  const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+  
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner':
@@ -121,35 +100,40 @@ const CourseCard = ({ course }: CourseCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-48 overflow-hidden">
+    <Link to={`/course/${course.id}`} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all group">
+      <div className="h-48 overflow-hidden relative">
         <img
           src={course.coverImage}
           alt={course.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
+        <span className={`absolute top-4 right-4 px-2 py-1 rounded text-xs font-medium ${getLevelColor(course.level)}`}>
+          {course.level === 'beginner' ? '初级' : course.level === 'intermediate' ? '中级' : '高级'}
+        </span>
       </div>
       <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-xl font-bold text-gray-900">{course.title}</h3>
-          <span className={`px-2 py-1 rounded text-xs font-medium ${getLevelColor(course.level)}`}>
-            {course.level === 'beginner' ? '初级' : course.level === 'intermediate' ? '中级' : '高级'}
-          </span>
-        </div>
-        <p className="text-gray-600 mb-4 line-clamp-2">{course.description}</p>
+        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">{course.title}</h3>
+        <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{course.description}</p>
         <div className="flex justify-between items-center mb-4">
-          <span className="text-sm text-gray-500">{course.duration}</span>
-          <span className="text-sm text-gray-500">
-            {course.modules.reduce((total, module) => total + module.lessons.length, 0)} 课时
+          <div className="flex items-center gap-1 text-sm text-gray-500">
+            <Clock size={14} />
+            <span>{course.duration}</span>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-gray-500">
+            <BookOpen size={14} />
+            <span>{totalLessons} 课时</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">
+            {course.modules.length} 个模块
+          </span>
+          <span className="inline-flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            查看详情
+            <ChevronRight size={16} />
           </span>
         </div>
-        <Link
-          to={`/course/${course.id}`}
-          className="block w-full text-center py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-        >
-          查看详情
-        </Link>
       </div>
-    </div>
+    </Link>
   );
 };
