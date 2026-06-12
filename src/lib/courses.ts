@@ -121,6 +121,7 @@ export const courses: Course[] = [
     description: '使用Matplotlib和Seaborn创建精美的数据可视化图表',
     level: 'intermediate',
     duration: '12小时',
+    rating: 4.7,
     category: 'visualization',
     coverImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20visualization%20with%20Matplotlib%20and%20Seaborn&image_size=landscape_16_9',
     modules: [
