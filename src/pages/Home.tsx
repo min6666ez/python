@@ -10,16 +10,12 @@ interface HomeProps {
 }
 
 export default function Home({ user }: HomeProps) {
-  const [courses, setCourses] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any>(null);
   const [recentCourses, setRecentCourses] = useState<any[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    // 使用导入的课程数据
-    setCourses(courses);
-    
     // 模拟最近学习的课程
     setRecentCourses(courses.slice(0, 3));
 
@@ -382,7 +378,7 @@ export default function Home({ user }: HomeProps) {
                     </div>
                     <span className="text-sm text-gray-500 flex items-center">
                       <Clock size={14} className="mr-1" />
-                      {course.duration} 分钟
+                      {course.duration}
                     </span>
                   </div>
                   <Link
