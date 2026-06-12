@@ -1,8 +1,8 @@
 import { User } from "firebase/auth";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from 'react';
-import { courses } from '../lib/courses';
-import { getUserAchievements } from '../lib/achievements';
+import { courses, Course } from '../lib/courses';
+import { getUserAchievements, UserAchievement } from '../lib/achievements';
 import { Book, Award, Clock, Star, ChevronRight, User as UserIcon, Menu, X } from 'lucide-react';
 
 interface HomeProps {
@@ -10,8 +10,8 @@ interface HomeProps {
 }
 
 export default function Home({ user }: HomeProps) {
-  const [achievements, setAchievements] = useState<any>(null);
-  const [recentCourses, setRecentCourses] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<UserAchievement | null>(null);
+  const [recentCourses, setRecentCourses] = useState<Course[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -307,7 +307,7 @@ export default function Home({ user }: HomeProps) {
                 difficulty: '专家',
                 color: 'bg-red-100 text-red-800'
               }
-            ].map((project, index) => (
+            ].map((project) => (
               <Link
                 key={project.id}
                 to={`/data-analysis/${project.id}`}

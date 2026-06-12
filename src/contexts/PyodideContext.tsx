@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface ExecutionResult {
+export interface ExecutionResult {
   stdout: string;
   stderr: string;
-  result: any;
+  result: unknown;
   error: boolean;
   images: string[];
 }
 
 interface PyodideContextType {
-  pyodide: any;
+  pyodide: { loaded: boolean } | null;
   isLoading: boolean;
   loadProgress: number;
   loadError: string | null;
@@ -21,10 +21,9 @@ interface PyodideContextType {
 const PyodideContext = createContext<PyodideContextType | undefined>(undefined);
 
 export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [pyodide, setPyodide] = useState<any>(null);
+  const [pyodide, setPyodide] = useState<{ loaded: boolean } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState(100);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(false);
@@ -112,7 +111,7 @@ export const PyodideProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadPackage = async () => {};
 
   return (
-    <PyodideContext.Provider value={{ pyodide, isLoading, loadProgress, loadError, runPython, reset, loadPackage }}>
+    <PyodideContext.Provider value={{ pyodide, isLoading, loadProgress, loadError: null, runPython, reset, loadPackage }}>
       {children}
     </PyodideContext.Provider>
   );

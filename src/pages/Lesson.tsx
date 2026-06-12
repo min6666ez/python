@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { courses } from '../lib/courses';
+import { courses, Course, Lesson as LessonType } from '../lib/courses';
 
 // 模拟Pyodide加载
 const loadPyodide = async () => {
@@ -21,23 +21,27 @@ const loadPyodide = async () => {
   };
 };
 
+interface PyodideInstance {
+  runPython: (code: string) => Promise<string>;
+}
+
 export default function Lesson() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-  const [lesson, setLesson] = useState<any>(null);
-  const [course, setCourse] = useState<any>(null);
+  const [lesson, setLesson] = useState<LessonType | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [prevLessonId, setPrevLessonId] = useState<string | null>(null);
   const [nextLessonId, setNextLessonId] = useState<string | null>(null);
-  const pyodideRef = useRef<any>(null);
+  const pyodideRef = useRef<PyodideInstance | null>(null);
 
   useEffect(() => {
     const foundCourse = courses.find(c => c.id === courseId);
     if (foundCourse) {
       setCourse(foundCourse);
       
-      const allLessons: any[] = [];
+      const allLessons: LessonType[] = [];
       for (const module of foundCourse.modules) {
         allLessons.push(...module.lessons);
       }

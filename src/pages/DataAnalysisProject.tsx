@@ -4,11 +4,11 @@ import { dataAnalysisProjects } from '../lib/dataAnalysisProjects';
 import { PythonEditor } from '../components/PythonEditor';
 import { AnalysisResult } from '../components/AnalysisResult';
 import { useProjectProgress } from '../hooks/useProjectProgress';
-import { usePyodide } from '../contexts/PyodideContext';
+import { usePyodide, ExecutionResult } from '../contexts/PyodideContext';
 
 export const DataAnalysisProject: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [executionResult, setExecutionResult] = useState<any>(null);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [showSolution, setShowSolution] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const { runPython } = usePyodide();
@@ -101,17 +101,6 @@ export const DataAnalysisProject: React.FC = () => {
       case 'expert': return '专家';
       default: return difficulty;
     }
-  };
-
-  // 格式化代码显示（添加行号）
-  const formatCodeWithLineNumbers = (code: string) => {
-    const lines = code.split('\n');
-    const maxLineNumWidth = String(lines.length).length;
-    
-    return lines.map((line, index) => {
-      const lineNum = String(index + 1).padStart(maxLineNumWidth, ' ');
-      return `${lineNum} | ${line}`;
-    }).join('\n');
   };
 
   return (

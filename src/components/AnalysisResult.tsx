@@ -9,7 +9,7 @@ interface ResultTab {
 interface ExecutionResult {
   stdout: string;
   stderr: string;
-  result: any;
+  result: unknown;
   error: boolean;
   images: string[];
 }
@@ -206,7 +206,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, tabs }) 
               </div>
             </div>
           );
-        default:
+        default: {
           // 输出内容
           const hasImages = result.images && result.images.length > 0;
           const hasOutput = result.stdout && result.stdout.trim().length > 0;
@@ -273,6 +273,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, tabs }) 
               )}
             </div>
           );
+        }
       }
     };
 

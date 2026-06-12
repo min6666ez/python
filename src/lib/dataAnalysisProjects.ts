@@ -28,7 +28,7 @@ export interface DataAnalysisProject {
     // 生成数据集的 Python 代码（在 Pyodide 中执行）
     generationCode: string;
     // 或者预生成的 JSON 数据
-    preGeneratedData?: Record<string, any>[];
+    preGeneratedData?: Record<string, unknown>[];
   };
   
   // 预置的 Python 分析代码

@@ -1,7 +1,8 @@
 import { linter } from '@codemirror/lint';
+import type { Diagnostic } from '@codemirror/lint';
 
 export const PythonLinter = linter((view) => {
-  const diagnostics: any[] = [];
+  const diagnostics: Diagnostic[] = [];
   const text = view.state.doc.toString();
   const lines = text.split('\n');
   

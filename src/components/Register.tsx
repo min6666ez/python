@@ -19,8 +19,8 @@ const Register = () => {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 

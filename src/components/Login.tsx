@@ -12,8 +12,8 @@ const Login = () => {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { auth } from '../lib/firebase';
-import { getUserAchievements, getLeaderboard, getBadgeById, Badge, LeaderboardEntry } from '../lib/achievements';
+import { getUserAchievements, getLeaderboard, getBadgeById, Badge, LeaderboardEntry, UserAchievement } from '../lib/achievements';
 
 export default function Achievements() {
   const [user] = useState(auth.currentUser);
-  const [achievements, setAchievements] = useState<any>(null);
+  const [achievements, setAchievements] = useState<UserAchievement | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userBadges, setUserBadges] = useState<Badge[]>([]);
 
@@ -16,9 +16,9 @@ export default function Achievements() {
       setAchievements(userAchievements);
 
       // 获取用户徽章详情
-      const badges = userAchievements.badges.map((badge: any) => {
+      const badges = userAchievements.badges.map((badge) => {
         return getBadgeById(badge.badgeId);
-      }).filter((badge: any) => badge !== undefined);
+      }).filter((badge): badge is Badge => badge !== undefined);
       setUserBadges(badges);
 
       // 获取排行榜
